@@ -1,26 +1,47 @@
+// src/MainMenu.js
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion'; 
 
-function MainMenu({ user, onStartChallenge, onShowProgress }) {
-  const [stats, setStats] = useState({ streak: 1, xp: 0 });
-
+function MainMenu({ user, onStartChallenge, onShowProgress, token }) {
+  const [stats, setStats] = useState({ streak: 0, xp: 0 });
+  
   useEffect(() => {
-    // 1. Get progress from local storage
-    const stored = JSON.parse(localStorage.getItem("vocalisProgress")) || [];
+    const fetchProgress = async () => {
+      try {
+        const res = await fetch('http://localhost:3001/api/progress', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          // --- THIS IS THE FIX ---
+          const progressArray = data.progress || []; // Default to empty array
+          const masteredCount = progressArray.filter(w => w.mastered).length;
+          // --- END OF FIX ---
+          
+          setStats({ 
+            streak: data.streak || 0, // Default to 0
+            xp: masteredCount * 100 
+          });
+        } else {
+           throw new Error(data.error || 'Failed to fetch stats');
+        }
+      } catch (err) {
+        console.error("Failed to fetch progress for stats", err);
+        setStats({ streak: 0, xp: 0 }); // Set to 0 on error
+      }
+    };
     
-    // 2. Calculate XP (100 points for every mastered word)
-    const masteredCount = stored.filter(w => w.mastered).length;
-    
-    // 3. Set Stats (Hardcoding streak to 3 for the Hackathon Demo effect!)
-    setStats({ 
-      streak: 3, 
-      xp: masteredCount * 100 
-    }); 
-  }, []);
+    if (token) {
+      fetchProgress();
+    }
+  }, [token]);
 
   return (
     <header className="App-header">
-      {/* 🏆 FLOATY STATS CARD */}
+      {/* FLOATY STATS CARD */}
       <motion.div 
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -43,19 +64,19 @@ function MainMenu({ user, onStartChallenge, onShowProgress }) {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <span style={{ fontSize: '1.5rem' }}>🔥</span> 
+          <span style={{ fontSize: '1.5rem' }}>🔥</span>
           <span>{stats.streak} Days</span>
         </div>
         
         <div style={{ width: '1px', height: '25px', background: '#ddd' }}></div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <span style={{ fontSize: '1.5rem' }}>💎</span> 
+          <span style={{ fontSize: '1.5rem' }}>✨</span>
           <span style={{ color: '#00c896' }}>{stats.xp} XP</span>
         </div>
       </motion.div>
 
-      {/* 👋 GREETING */}
+      {/* GREETING */}
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -69,7 +90,7 @@ function MainMenu({ user, onStartChallenge, onShowProgress }) {
         </p>
       </motion.div>
       
-      {/* 🔘 BIG BUTTONS */}
+      {/* BIG BUTTONS */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '320px' }}>
         <motion.button 
           whileHover={{ scale: 1.05 }}
@@ -87,7 +108,7 @@ function MainMenu({ user, onStartChallenge, onShowProgress }) {
             cursor: 'pointer'
           }}
         >
-          🎯 Start Challenge
+          🗣️ Start Challenge
         </motion.button>
 
         <motion.button 

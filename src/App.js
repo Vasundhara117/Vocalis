@@ -33,6 +33,14 @@ function App() {
   const handleShowProgress = () => setCurrentScreen("PROGRESS");
   const handleGoToMenu = () => setCurrentScreen("MENU");
   
+const handleLogout = () => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem("vocalisUser");
+    localStorage.removeItem("vocalisToken");
+    setCurrentScreen("AUTH");
+  };
+
   // --- THIS IS THE NEW FUNCTION ---
   const handleGoToLevelSelect = () => setCurrentScreen("LEVEL_SELECT");
 
@@ -70,6 +78,7 @@ function App() {
               token={token}
               onStartChallenge={handleStartChallenge}
               onShowProgress={handleShowProgress}
+              onLogout={handleLogout}
             />
           </motion.div>
         )}

@@ -28,12 +28,16 @@ const UserSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', UserSchema);
 
+// src/server.js
+
 const LevelSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
   name: { type: String, required: true },
   description: { type: String },
   color: { type: String },
-  words: [{ type: String }]
+  words: [{ type: String }],
+  nextLevelId: { type: String, default: null }, 
+  nextLevelName: { type: String, default: null } 
 });
 const Level = mongoose.model('Level', LevelSchema);
 
@@ -174,25 +178,22 @@ app.get('/api/levels', async (req, res) => {
   }
 });
 
+// --- THIS IS THE CORRECTED FUNCTION ---
 app.get('/api/level/:id', async (req, res) => {
   try {
     const level = await Level.findOne({ id: req.params.id });
     if (!level) {
-      return res.status(404).json({ error: 'Level not found' });
+      return res.status(404).json({ error: 'Level not found' }); // <-- Corrected 404
     }
-    res.json(level.words);
+    res.json(level); // <-- Sends the whole object
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ error: 'Server error' });
   }
 });
+// --- END OF CORRECTION ---
 
-// --- PROGRESS ENDPOINTS (MODIFIED FOR STREAK) ---
-// server.js
-
-// ... (keep all your other code like UserSchema, LevelSchema, etc.) ...
-
-// --- REPLACE your old '/api/progress' endpoint with THIS ---
+// --- PROGRESS ENDPOINTS ---
 app.get('/api/progress', authMiddleware, async (req, res) => {
   try {
     // 1. Get all levels to create a "lookup" for names and colors
@@ -212,13 +213,11 @@ app.get('/api/progress', authMiddleware, async (req, res) => {
     // 2. Get ALL user progress entries
     const allProgressEntries = await Progress.find({ user: req.user.id }).sort({ date: -1 });
 
-    // --- THIS IS THE FIX ---
     // 3. Filter out the themes you don't want to show
     const progressEntries = allProgressEntries.filter(p => {
       // The p.level field holds the theme name (e.g., "1", "Hard Family")
-      return p.level !== "1" && p.level !== "TIME_ATTACK"; // <-- Changed "Level 1" to "1"
+      return p.level !== "1" && p.level !== "TIME_ATTACK"; 
     });
-    // --- END OF FIX ---
 
     // 4. Calculate streak (using ALL entries, not just filtered ones)
     const streak = calculateStreak(allProgressEntries);
@@ -268,7 +267,6 @@ app.get('/api/progress', authMiddleware, async (req, res) => {
   }
 });
 
-// ... (the rest of your server.js file) ...
 
 app.post('/api/progress', authMiddleware, async (req, res) => {
   try {
@@ -294,9 +292,27 @@ app.post('/api/progress', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
-// ... (This is after your app.post('/api/progress', ...) block)
 
-// --- NEW ENDPOINT TO CLEAR PROGRESS ---
+// --- ENDPOINT FOR THE PRACTICE DECK ---
+app.get('/api/progress/practice', authMiddleware, async (req, res) => {
+  try {
+    // Find all words for this user that are NOT mastered
+    const practiceWords = await Progress.find({ 
+      user: req.user.id, 
+      mastered: false 
+    }).select('word -_id'); // Only select the 'word' field, exclude '_id'
+
+    // Map the array of objects [ { word: 'CAT' } ] to an array of strings [ 'CAT' ]
+    const wordList = practiceWords.map(p => p.word);
+    
+    res.json(wordList);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// --- ENDPOINT TO CLEAR PROGRESS ---
 app.delete('/api/progress', authMiddleware, async (req, res) => {
   try {
     // Get the user ID from the authentication middleware
@@ -313,8 +329,6 @@ app.delete('/api/progress', authMiddleware, async (req, res) => {
   }
 });
 
-// --- Server Listen ---
-// (Your app.listen(...) code is at the end)
 // --- Server Listen ---
 const PORT = 3001;
 app.listen(PORT, () => {

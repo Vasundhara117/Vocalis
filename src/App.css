@@ -860,3 +860,465 @@ body {
   margin: 5px 0;
   font-size: 14px;
 }
+/* ---------------- REAL FLOATING BALLOONS (SAFE, CLEAN) ---------------- */
+
+.balloon {
+  position: absolute;
+  width: 80px;
+  height: 100px;
+  background: #ff8b8b;
+  border-radius: 50% 50% 45% 45%;
+  box-shadow: inset -6px -12px 0 rgba(0,0,0,0.15);
+  opacity: 0.9;
+  animation: balloonFloatUp 14s linear infinite;
+  z-index: 1;
+  pointer-events: none; /* ensure no UI disturbance */
+}
+
+/* Balloon string */
+.balloon::after {
+  content: "";
+  position: absolute;
+  width: 2.5px;
+  height: 75px;
+  background: rgba(60, 60, 60, 0.7);
+  bottom: -75px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Colorblind-safe colors */
+.balloon1 { background: #ff8b8b; left: 20%; animation-duration: 16s; }
+.balloon2 { background: #85d1ff; left: 50%; animation-duration: 18s; }
+.balloon3 { background: #a8e063; left: 75%; animation-duration: 15s; }
+
+/* Smooth upward motion */
+@keyframes balloonFloatUp {
+  0% {
+    transform: translateY(110vh) translateX(0);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(40vh) translateX(-10px);
+  }
+  100% {
+    transform: translateY(-20vh) translateX(10px);
+    opacity: 1;
+  }
+}
+/* ---------------- MAIN MENU FIX (RESTORE CENTER + SKY) ---------------- */
+
+.mainmenu-wrapper {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+
+  /* Soft sky gradient */
+  background: linear-gradient(to bottom, #a3d8ff, #e7f4ff);
+  padding: 20px;
+}
+
+/* Ensure content is centered */
+.menu-title, 
+.menu-avatar,
+.menu-subtitle,
+.menu-buttons,
+.logout-btn {
+  z-index: 5;   /* keep above balloons */
+  position: relative;
+  text-align: center;
+}
+
+/* Fix the title layout (name + avatar below it) */
+.menu-title {
+  font-size: 2.4rem;
+  color: #334eac;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.menu-avatar {
+  display: block;
+  font-size: 4rem;
+  margin-top: 10px;
+}
+
+.menu-subtitle {
+  font-size: 1.2rem;
+  color: #4466aa;
+  margin-bottom: 30px;
+}
+
+/* Center menu buttons vertically */
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+  max-width: 300px;
+  align-items: center;
+}
+
+.menu-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 20px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  transition: 0.2s ease;
+}
+
+/* Colorblind-safe buttons */
+.play-btn {
+  background: #ffb74d;
+  color: #fff;
+}
+.play-btn:hover {
+  background: #ffa726;
+}
+
+.progress-btn {
+  background: #64b5f6;
+  color: white;
+}
+.progress-btn:hover {
+  background: #42a5f5;
+}
+
+/* Logout button */
+.logout-btn {
+  background: none;
+  border: none;
+  color: #336699;
+  margin-top: 30px;
+  text-decoration: underline;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+/* ---------------- STATS CARD ---------------- */
+.stats-card {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 5;
+
+  background: white;
+  padding: 12px 22px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #333;
+}
+
+.divider {
+  width: 1px;
+  height: 28px;
+  background: #ccc;
+}
+
+.xp-text {
+  color: #00a86b;
+}
+/* ---------------- UPGRADED 3D BALLOONS ---------------- */
+
+.balloon {
+  position: absolute;
+  width: 65px;
+  height: 85px;
+  background: radial-gradient(circle at 30% 30%,
+      rgba(255, 180, 90, 1) 0%,
+      rgba(255, 120, 60, 1) 60%,
+      rgba(255, 95, 40, 1) 100%);
+  border-radius: 50% 50% 45% 45%;
+  animation: floatUp 14s linear infinite,
+             wiggle 3.8s ease-in-out infinite;
+  z-index: 1; /* behind content */
+  opacity: 0.92;
+}
+
+/* Balloon highlight */
+.balloon::before {
+  content: "";
+  position: absolute;
+  top: 18%;
+  left: 30%;
+  width: 18px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+}
+
+/* Balloon knot */
+.balloon::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: #cc5433;
+  border-radius: 20%;
+  transform: translateX(-50%);
+}
+
+/* Balloon string */
+.balloon-string {
+  position: absolute;
+  bottom: -45px;
+  left: 50%;
+  width: 2px;
+  height: 45px;
+  background: rgba(80, 80, 80, 0.55);
+  transform: translateX(-50%);
+}
+
+@keyframes floatUp {
+  0% { transform: translateY(100vh) translateX(0); }
+  100% { transform: translateY(-120vh) translateX(0); }
+}
+
+/* Slight side-to-side realistic drift */
+@keyframes wiggle {
+  0% { transform: translateX(-10px); }
+  50% { transform: translateX(10px); }
+  100% { transform: translateX(-10px); }
+}
+
+/* Balloon positions & sizes */
+.balloon1 {
+  left: 15%;
+  animation-duration: 17s;
+  transform: scale(1.0);
+}
+.balloon2 {
+  left: 45%;
+  animation-duration: 22s;
+  transform: scale(1.3);
+}
+.balloon3 {
+  left: 75%;
+  animation-duration: 19s;
+  transform: scale(0.85);
+}
+
+/* ---------------- CLEAN FINAL MAIN MENU STYLES ---------------- */
+
+/* Replace old sky-wrapper or mainmenu-wrapper for this screen */
+.mainmenu-container {
+  min-height: 100vh;
+  width: 100%;
+  background: linear-gradient(to bottom, #a3d8ff, #e7f4ff);
+  position: relative;
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 25px;
+}
+
+/* Keep all content above balloons */
+.menu-title,
+.menu-avatar,
+.menu-subtitle,
+.menu-buttons,
+.logout-btn,
+.stats-card {
+  position: relative;
+  z-index: 5;
+}
+
+/* Greeting */
+.menu-title {
+  font-size: 2.4rem;
+  color: #334eac;
+  font-weight: 700;
+  text-align: center;
+}
+
+.menu-avatar {
+  font-size: 4rem;
+  margin-top: 10px;
+  display: block;
+}
+
+.menu-subtitle {
+  font-size: 1.2rem;
+  color: #4466aa;
+  margin-bottom: 30px;
+}
+
+/* Buttons */
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 10px;
+}
+
+.menu-btn {
+  width: 100%;
+  border-radius: 20px;
+  padding: 16px;
+  font-size: 1.2rem;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+.play-btn {
+  background: #ffb74d;
+  color: #fff;
+}
+.play-btn:hover {
+  background: #ffa726;
+}
+
+.progress-btn {
+  background: #64b5f6;
+  color: white;
+}
+.progress-btn:hover {
+  background: #42a5f5;
+}
+
+/* Logout */
+.logout-btn {
+  background: none;
+  border: none;
+  margin-top: 20px;
+  text-decoration: underline;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #336699;
+  cursor: pointer;
+}
+
+/* Stats top-right */
+.stats-card {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: white;
+  padding: 12px 22px;
+  border-radius: 20px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.xp-text {
+  color: #00a86b;
+}
+
+.divider {
+  width: 2px;
+  height: 28px;
+  background: #ccc;
+}
+
+/* ---------------- POLISHED 3D BALLOONS ---------------- */
+
+.balloon {
+  position: absolute;
+  width: 70px;
+  height: 95px;
+  background: radial-gradient(circle at 30% 30%,
+      rgba(255, 170, 80, 1) 0%,
+      rgba(255, 120, 60, 1) 55%,
+      rgba(255, 95, 40, 1) 100%);
+  border-radius: 50% 50% 45% 45%;
+  z-index: 1;
+  opacity: 0.92;
+
+  animation: balloonRise 14s linear infinite,
+             balloonWiggle 4s ease-in-out infinite;
+}
+
+/* Highlight */
+.balloon::before {
+  content: "";
+  position: absolute;
+  top: 15%;
+  left: 30%;
+  width: 16px;
+  height: 26px;
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+}
+
+/* Knot */
+.balloon::after {
+  content: "";
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: #c65433;
+  border-radius: 20%;
+  transform: translateX(-50%);
+}
+
+/* Strings */
+.balloon-string {
+  position: absolute;
+  bottom: -55px;
+  left: 50%;
+  width: 2px;
+  height: 55px;
+  background: rgba(60, 60, 60, 0.6);
+  transform: translateX(-50%);
+}
+
+/* Smooth upward movement */
+@keyframes balloonRise {
+  0% { transform: translateY(110vh); }
+  100% { transform: translateY(-120vh); }
+}
+
+/* Gentle sway */
+@keyframes balloonWiggle {
+  0% { margin-left: -10px; }
+  50% { margin-left: 10px; }
+  100% { margin-left: -10px; }
+}
+
+/* Different positions + sizes */
+.balloon1 { left: 18%; animation-duration: 17s; transform: scale(1); }
+.balloon2 { left: 50%; animation-duration: 21s; transform: scale(1.25); }
+.balloon3 { left: 78%; animation-duration: 18s; transform: scale(0.9); }

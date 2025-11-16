@@ -33,7 +33,7 @@ function App() {
   const handleShowProgress = () => setCurrentScreen("PROGRESS");
   const handleGoToMenu = () => setCurrentScreen("MENU");
   
-const handleLogout = () => {
+  const handleLogout = () => {
     setUser(null);
     setToken(null);
     localStorage.removeItem("vocalisUser");
@@ -41,7 +41,6 @@ const handleLogout = () => {
     setCurrentScreen("AUTH");
   };
 
-  // --- THIS IS THE NEW FUNCTION ---
   const handleGoToLevelSelect = () => setCurrentScreen("LEVEL_SELECT");
 
   const handleSelectLevel = (levelId) => {
@@ -92,18 +91,19 @@ const handleLogout = () => {
           </motion.div>
         )}
 
-        {/* --- THIS IS THE FIX --- */}
+        {/* --- THIS BLOCK IS UPDATED --- */}
         {currentScreen === "CHALLENGE" && (
           <motion.div key="challenge" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ width: '100%', position: 'absolute' }}>
             <ChallengeScreen
               token={token}
-              onGoToMenu={handleGoToLevelSelect} // <-- Use the new function here
+              onGoToMenu={handleGoToLevelSelect} 
               onGoToProgress={handleShowProgress}
               selectedLevel={selectedLevel}
+              onSelectLevel={handleSelectLevel} 
             />
           </motion.div>
         )}
-        {/* --- END OF FIX --- */}
+        {/* --- END OF UPDATE --- */}
 
         {currentScreen === "PROGRESS" && (
           <motion.div key="progress" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ width: '100%', position: 'absolute' }}>

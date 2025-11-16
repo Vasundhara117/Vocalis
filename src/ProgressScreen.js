@@ -1,25 +1,47 @@
+// src/ProgressScreen.js
 import React, { useEffect, useState } from "react";
 import "./App.css";
 
-function ProgressScreen({ onGoToMenu }) {
+function ProgressScreen({ onGoToMenu, token }) {
   const [progress, setProgress] = useState([]);
+  const [streak, setStreak] = useState(0);
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("vocalisProgress")) || [];
-    setProgress(stored);
-  }, []);
+    const fetchProgress = async () => {
+      try {
+        const res = await fetch('http://localhost:3001/api/progress', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setProgress(data.progress || []); // <-- FIX: Default to []
+          setStreak(data.streak || 0); // <-- FIX: Default to 0
+        } else {
+          throw new Error(data.error || 'Failed to fetch progress');
+        }
+      } catch (err) {
+        console.error(err);
+        setProgress([]); // Set to empty array on any error
+      }
+    };
+    
+    if (token) {
+      fetchProgress();
+    }
+  }, [token]);
 
-  const mastered = progress.filter((w) => w.mastered);
-  const practiceLater = progress.filter((w) => !w.mastered);
+  const mastered = (progress || []).filter((w) => w.mastered);
+  const practiceLater = (progress || []).filter((w) => !w.mastered);
 
   const avg =
-    progress.length > 0
+    progress && progress.length > 0
       ? Math.round(progress.reduce((a, b) => a + b.accuracy, 0) / progress.length)
       : 0;
 
   const clearProgress = () => {
-    localStorage.removeItem("vocalisProgress");
-    setProgress([]);
+    alert("This button is disabled. Progress is now saved to your account.");
   };
 
   return (
@@ -28,6 +50,7 @@ function ProgressScreen({ onGoToMenu }) {
       <h1>📊 Your Progress</h1>
 
       <div className="progress-summary">
+        <p>Current Streak: <strong>🔥 {streak} Days</strong></p> 
         <p>Average Accuracy: <strong>{avg}%</strong></p>
         <div className="progress-bar">
           <div

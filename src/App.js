@@ -1,50 +1,54 @@
+// src/App.js
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./App.css";
-import ProfileScreen from "./ProfileScreen";
+import AuthScreen from "./AuthScreen"; 
 import MainMenu from "./MainMenu";
 import ChallengeScreen from "./ChallengeScreen";
 import ProgressScreen from "./ProgressScreen";
 import LevelSelect from "./LevelSelect";
 
 function App() {
-  const [currentScreen, setCurrentScreen] = useState("PROFILE");
+  const [currentScreen, setCurrentScreen] = useState("AUTH"); 
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null); 
   const [selectedLevel, setSelectedLevel] = useState(1);
 
+  // This cleans up old localStorage data on first load
   useEffect(() => {
-    const savedUser = localStorage.getItem("vocalisUser");
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-      setCurrentScreen("MENU");
-    }
+    localStorage.removeItem("vocalisUser");
+    localStorage.removeItem("vocalisToken");
   }, []);
 
-  const handleLogin = (name, avatar) => {
-    const newUser = { name, avatar };
-    setUser(newUser);
-    localStorage.setItem("vocalisUser", JSON.stringify(newUser));
+  // This function is passed to AuthScreen.js
+  const handleLogin = (userObject, authToken) => {
+    setUser(userObject);
+    setToken(authToken);
+    localStorage.setItem("vocalisUser", JSON.stringify(userObject));
+    localStorage.setItem("vocalisToken", authToken); 
     setCurrentScreen("MENU");
   };
 
   const handleStartChallenge = () => setCurrentScreen("LEVEL_SELECT");
   const handleShowProgress = () => setCurrentScreen("PROGRESS");
   const handleGoToMenu = () => setCurrentScreen("MENU");
+  
+  // --- THIS IS THE NEW FUNCTION ---
+  const handleGoToLevelSelect = () => setCurrentScreen("LEVEL_SELECT");
 
   const handleSelectLevel = (levelId) => {
     setSelectedLevel(levelId);
     setCurrentScreen("CHALLENGE");
   };
 
-  // ⚡️ FAST SETTINGS ⚡️
   const pageTransition = {
     type: "spring",
-    stiffness: 300, // ⬆️ Increased from 50 to 300 (Much faster)
-    damping: 25     // ⬆️ Keeps it tight so it doesn't wobble
+    stiffness: 300, 
+    damping: 25     
   };
 
   const pageVariants = {
-    initial: { opacity: 0, x: 20 }, // Slide from right (looks faster than up)
+    initial: { opacity: 0, x: 20 },
     in: { opacity: 1, x: 0 },
     out: { opacity: 0, x: -20 }
   };
@@ -53,9 +57,9 @@ function App() {
     <div className="App">
       <AnimatePresence mode="wait">
         
-        {currentScreen === "PROFILE" && (
-          <motion.div key="profile" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ width: '100%', position: 'absolute' }}>
-            <ProfileScreen onLogin={handleLogin} />
+        {currentScreen === "AUTH" && (
+          <motion.div key="auth" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ width: '100%', position: 'absolute' }}>
+            <AuthScreen onLogin={handleLogin} />
           </motion.div>
         )}
 
@@ -63,6 +67,7 @@ function App() {
           <motion.div key="menu" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ width: '100%', position: 'absolute' }}>
             <MainMenu
               user={user}
+              token={token}
               onStartChallenge={handleStartChallenge}
               onShowProgress={handleShowProgress}
             />
@@ -78,19 +83,25 @@ function App() {
           </motion.div>
         )}
 
+        {/* --- THIS IS THE FIX --- */}
         {currentScreen === "CHALLENGE" && (
           <motion.div key="challenge" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ width: '100%', position: 'absolute' }}>
             <ChallengeScreen
-              onGoToMenu={handleGoToMenu}
+              token={token}
+              onGoToMenu={handleGoToLevelSelect} // <-- Use the new function here
               onGoToProgress={handleShowProgress}
               selectedLevel={selectedLevel}
             />
           </motion.div>
         )}
+        {/* --- END OF FIX --- */}
 
         {currentScreen === "PROGRESS" && (
           <motion.div key="progress" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ width: '100%', position: 'absolute' }}>
-            <ProgressScreen onGoToMenu={handleGoToMenu} />
+            <ProgressScreen 
+              token={token}
+              onGoToMenu={handleGoToMenu} 
+            />
           </motion.div>
         )}
 

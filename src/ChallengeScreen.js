@@ -5,14 +5,19 @@ import Confetti from "react-confetti";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWindowSize } from "react-use";
 
-function ChallengeScreen({ onGoToMenu, onGoToProgress, selectedLevel, token, onSelectLevel }) {
+function ChallengeScreen({ onGoToMenu, onGoToProgress, selectedLevel, token, onSelectLevel, onShowLeaderboard }) {
   const { width, height } = useWindowSize();
   const canvasRef = useRef(null);
   
   // --- States ---
-  const [words, setWords] = useState([]);
+  const [words, setWords] = useState([]); 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [currentWord, setCurrentWord] = useState("Loading...");
+  const [currentWord, setCurrentWord] = useState("Loading..."); 
+  
+  // --- NEW STATES FOR PICTURE ROUND ---
+  const [isPictureRound, setIsPictureRound] = useState(false);
+  const [currentImageUrl, setCurrentImageUrl] = useState(null);
+  // --- END NEW STATES ---
   
   const [levelName, setLevelName] = useState('');
   const [nextLevelId, setNextLevelId] = useState(null);
@@ -38,7 +43,6 @@ function ChallengeScreen({ onGoToMenu, onGoToProgress, selectedLevel, token, onS
   const [combo, setCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
   const [lastRecordingURL, setLastRecordingURL] = useState(null);
-  // --- End of States ---
 
   const encouragements = [
     "You’re doing great! Let’s try once more 💪",
@@ -104,7 +108,22 @@ function ChallengeScreen({ onGoToMenu, onGoToProgress, selectedLevel, token, onS
     return () => clearTimeout(timer);
   }, [showConfetti]);
 
-  // --- LEVEL LOADING HOOK ---
+  // --- HELPER FUNCTION to set the current word/image ---
+  const setWordData = (wordData) => {
+    if (typeof wordData === 'object' && wordData !== null && wordData.image) {
+      // It's a Picture Round object!
+      setIsPictureRound(true);
+      setCurrentWord(wordData.text);
+      setCurrentImageUrl(wordData.image);
+    } else {
+      // It's a normal level (just a string)
+      setIsPictureRound(false);
+      setCurrentWord(wordData);
+      setCurrentImageUrl(null);
+    }
+  };
+
+  // --- LEVEL LOADING HOOK (MODIFIED) ---
   useEffect(() => {
     const setupLevel = async () => {
       // Reset all states
@@ -120,6 +139,9 @@ function ChallengeScreen({ onGoToMenu, onGoToProgress, selectedLevel, token, onS
       setIsLevelComplete(false);
       setNextLevelId(null);
       setNextLevelName(null);
+      // --- NEW RESETS ---
+      setIsPictureRound(false);
+      setCurrentImageUrl(null);
       
       if (selectedLevel === "PRACTICE_DECK") {
         setFeedback("Loading your practice words...");
@@ -133,13 +155,13 @@ function ChallengeScreen({ onGoToMenu, onGoToProgress, selectedLevel, token, onS
           if (!practiceWords || practiceWords.length === 0) {
             setFeedback("You've mastered all your words!");
             setWords([]);
-            setCurrentWord("-");
+            setWordData("-"); // Use helper
             setIsLevelComplete(true); // Nothing to practice
           } else {
             setLevelName("Practice Deck");
             setWords(practiceWords);
             setCurrentIndex(0);
-            setCurrentWord(practiceWords[0]);
+            setWordData(practiceWords[0]); // Use helper
             setFeedback("");
           }
         } catch (err) {
@@ -153,28 +175,31 @@ function ChallengeScreen({ onGoToMenu, onGoToProgress, selectedLevel, token, onS
           const data = await res.json();
           const timeAttackWords = data.words || [];
           setWords(timeAttackWords);
-          setCurrentWord(timeAttackWords.length ? timeAttackWords[Math.floor(Math.random() * timeAttackWords.length)] : "No words");
+          // Set a random word
+          const randomWord = timeAttackWords.length ? timeAttackWords[Math.floor(Math.random() * timeAttackWords.length)] : "No words";
+          setWordData(randomWord); // Use helper
           setLevelName("Time Attack");
         } catch (err) {
           console.error("Failed to fetch time attack words", err);
           setFeedback("Error loading game.");
         }
       } else {
-        // --- NORMAL LEVEL LOGIC ---
+        // --- NORMAL/PICTURE LEVEL LOGIC ---
         try {
           const res = await fetch(`http://localhost:3001/api/level/${selectedLevel}`);
-          const levelData = await res.json();
+          const data = await res.json();
           
-          if (!levelData || !levelData.words || levelData.words.length === 0) {
+          if (!data || !data.words || data.words.length === 0) {
             throw new Error("Level has no words");
           }
           
-          setWords(levelData.words);
+          setWords(data.words); // This is now an array of strings OR objects
           setCurrentIndex(0);
-          setCurrentWord(levelData.words[0]);
-          setLevelName(levelData.name); 
-          setNextLevelId(levelData.nextLevelId); 
-          setNextLevelName(levelData.nextLevelName); 
+          setWordData(data.words[0]); // Use helper to set first word/image
+          
+          setLevelName(data.name); 
+          setNextLevelId(data.nextLevelId); 
+          setNextLevelName(data.nextLevelName); 
           
         } catch (err) {
           console.error("Failed to fetch level words", err);
@@ -204,6 +229,34 @@ function ChallengeScreen({ onGoToMenu, onGoToProgress, selectedLevel, token, onS
     return () => clearInterval(interval);
   }, [isTimeAttack, timeAttackOver, botPace]);
 
+  // --- SUBMIT SCORE ON GAME OVER ---
+  useEffect(() => {
+    if (timeAttackOver && isTimeAttack) {
+      // Game just ended, submit the score
+      const submitScore = async () => {
+        try {
+          await fetch('http://localhost:3001/api/leaderboard', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify({
+              score: score,
+              maxCombo: maxCombo
+            })
+          });
+          console.log('Score submitted!');
+        } catch (err) {
+          console.error('Failed to submit score', err);
+        }
+      };
+
+      submitScore();
+    }
+  }, [timeAttackOver, isTimeAttack, score, maxCombo, token]);
+
+
   // SAVE PROGRESS (Sends to DB)
   const saveProgress = async (word, accuracy) => {
     if (!token) return;
@@ -212,7 +265,7 @@ function ChallengeScreen({ onGoToMenu, onGoToProgress, selectedLevel, token, onS
       word,
       accuracy,
       mastered,
-      level: selectedLevel, // Save the level ID (e.g., "animals-easy")
+      level: selectedLevel, 
       date: new Date().toISOString()
     };
 
@@ -251,7 +304,7 @@ function ChallengeScreen({ onGoToMenu, onGoToProgress, selectedLevel, token, onS
     try {
       const formData = new FormData();
       formData.append('audioBlob', audioBlob, 'speech.webm');
-      formData.append('text', currentWord);
+      formData.append('text', currentWord); // currentWord is the "answer"
       const res = await fetch("http://localhost:3001/api/check-speech", {
         method: "POST",
         body: formData,
@@ -273,7 +326,7 @@ function ChallengeScreen({ onGoToMenu, onGoToProgress, selectedLevel, token, onS
   const handleMicClick = async () => {
     if (isRecording || timeAttackOver || words.length === 0 || isLevelComplete) return;
     setIsRecording(true);
-    setFeedback(`🎙️ Listening... say "${currentWord}"`);
+    setFeedback(`🎙️ Listening...`); // Simpler feedback for picture round
     setEncouragement("");
     setLastRecordingURL(null);
     try {
@@ -353,8 +406,8 @@ function ChallengeScreen({ onGoToMenu, onGoToProgress, selectedLevel, token, onS
   const loadNextWord = () => {
     if (timeAttackOver) return;
     const next = words.length ? words[Math.floor(Math.random() * words.length)] : "No words";
-    setCurrentWord(next);
-    setFeedback("Say: " + next);
+    setWordData(next); // Use helper
+    setFeedback("Say the new word!");
     setStars(0);
     setAccuracyValue(null);
     setLastRecordingURL(null);
@@ -367,12 +420,12 @@ function ChallengeScreen({ onGoToMenu, onGoToProgress, selectedLevel, token, onS
     if (next < words.length) {
       // 1. More words in this level
       setCurrentIndex(next);
-      setCurrentWord(words[next]);
+      setWordData(words[next]); // Use helper to set next word/image
     } else {
       // 2. Last word in the level
       playSound("complete");
       setShowConfetti(true);
-      setIsLevelComplete(true); // This will show the new buttons
+      setIsLevelComplete(true); 
       
       if (nextLevelId && nextLevelId !== "null" && nextLevelName && nextLevelName !== "null") {
         setFeedback(`🏁 Level Complete!`);
@@ -394,7 +447,7 @@ function ChallengeScreen({ onGoToMenu, onGoToProgress, selectedLevel, token, onS
 
   // --- handleHearIt function ---
   const handleHearIt = () => {
-    const utter = new SpeechSynthesisUtterance(currentWord);
+    const utter = new SpeechSynthesisUtterance(currentWord); // currentWord is still the answer
     utter.rate = 0.55;
     utter.pitch = 0.9;
     utter.lang = "en-US";
@@ -420,9 +473,24 @@ function ChallengeScreen({ onGoToMenu, onGoToProgress, selectedLevel, token, onS
         </div>
         <p style={{ fontSize: '1.2rem' }}>Bot's Score: {botScore}</p>
         <p>You got a {maxCombo}-word combo!</p>
-        <button className="next-btn" onClick={onGoToMenu} style={{ marginTop: "30px" }}>
-          🏠 Back to Menu
-        </button>
+
+        <motion.div 
+          style={{ display: 'flex', gap: '15px', marginTop: '30px' }}
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <button className="next-btn" onClick={onGoToMenu} style={{background: "#ffb84d"}}>
+            🏠 Back to Menu
+          </button>
+          <button 
+            className="next-btn leaderboard-btn" 
+            onClick={onShowLeaderboard}
+          >
+            🏆 View Leaderboard
+          </button>
+        </motion.div>
+        
       </div>
     );
   }
@@ -461,44 +529,54 @@ function ChallengeScreen({ onGoToMenu, onGoToProgress, selectedLevel, token, onS
         {/* --- BUTTON & CONTENT LOGIC CONTAINER --- */}
         <div className="button-controls-container" style={{display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%'}}>
           
-          {/* --- THIS IS THE FIX ---
-            Show the game UI if:
-            1. (It's NOT Time Attack AND the level is NOT complete)
-            OR
-            2. (It IS Time Attack)
-          */}
           {((!isTimeAttack && !isLevelComplete) || isTimeAttack) && (
             <>
-              <motion.div className="word-bubble" initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                {currentWord}
-              </motion.div>
+              {/* --- NEW UI LOGIC --- */}
+              {isPictureRound ? (
+                // 1. If Picture Round, show the image
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                  <img src={currentImageUrl} alt="Say what you see" className="picture-round-image" />
+                </motion.div>
+              ) : (
+                // 2. Otherwise, show the normal word bubble
+                <motion.div className="word-bubble" initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                  {currentWord}
+                </motion.div>
+              )}
 
-              <div style={{ height: "40px", marginBottom: "10px" }}>
-                <AnimatePresence>
-                  {combo >= 2 && ( 
-                    <motion.div
-                      key={combo}
-                      initial={{ scale: 0.5, opacity: 0 }}
-                      animate={{ scale: 1.2, opacity: 1 }}
-                      exit={{ scale: 0, opacity: 0 }}
-                      style={{
-                        fontSize: "1.5rem",
-                        fontWeight: "bold",
-                        color: "#ff4757",
-                        textShadow: "0 2px 10px rgba(255, 71, 87, 0.4)",
-                        background: "#fff0f1",
-                        padding: "5px 20px",
-                        borderRadius: "20px",
-                        border: "2px solid #ff4757",
-                      }}
-                    >
-                      🔥 COMBO x{combo}!
-                    </motion.div> 
-                  )}
-                </AnimatePresence>
-              </div>
+              {/* If picture round, show a ? bubble, else show combo */}
+              {isPictureRound && !isRecording ? (
+                <motion.div className="word-bubble-small" initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                  ?
+                </motion.div>
+              ) : (
+                <div style={{ height: "40px", marginBottom: "10px" }}>
+                  <AnimatePresence>
+                    {combo >= 2 && ( 
+                      <motion.div
+                        key={combo}
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1.2, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        style={{
+                          fontSize: "1.5rem",
+                          fontWeight: "bold",
+                          color: "#ff4757",
+                          textShadow: "0 2px 10px rgba(255, 71, 87, 0.4)",
+                          background: "#fff0f1",
+                          padding: "5px 20px",
+                          borderRadius: "20px",
+                          border: "2px solid #ff4757",
+                        }}
+                      >
+                        🔥 COMBO x{combo}!
+                      </motion.div> 
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+              {/* --- END OF NEW UI LOGIC --- */}
 
-              {/* Stars are hidden in Time Attack */}
               {!isTimeAttack && (
                 <div className="star-container">
                   {[1, 2, 3].map((s) => ( <span key={s} className={s <= stars ? "star active" : "star"}>⭐</span> ))}
@@ -512,7 +590,6 @@ function ChallengeScreen({ onGoToMenu, onGoToProgress, selectedLevel, token, onS
               </button>
               
               <div className="button-row" style={{ display: "flex", gap: "15px", marginTop: "10px" }}>
-                {/* "Hear It" and "Play My Audio" are hidden in Time Attack */}
                 {!isTimeAttack && showHearIt && ( <motion.button onClick={handleHearIt} className="hear-btn" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>👂 Hear It</motion.button> )}
                 {!isTimeAttack && lastRecordingURL && ( <motion.button onClick={() => new Audio(lastRecordingURL).play()} className="playback-btn" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>🎧 Play My Audio</motion.button> )}
               </div>
@@ -521,14 +598,12 @@ function ChallengeScreen({ onGoToMenu, onGoToProgress, selectedLevel, token, onS
               {encouragement && <motion.p className="encouragement" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{encouragement}</motion.p>}
               {accuracyValue !== null && <motion.p className="accuracy subtle" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>Accuracy: {accuracyValue}%</motion.p>}
               
-              {/* "Next" button is hidden in Time Attack */}
               {!isRecording && !showHearIt && !isTimeAttack && (
                 <button className="next-btn" onClick={nextWord}>Next ⏭️</button>
               )}
             </>
           )}
 
-          {/* --- B) When level is COMPLETE (and NOT Time Attack) --- */}
           {isLevelComplete && !isTimeAttack && (
             <>
               {feedback && <motion.div className="feedback-banner" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{fontSize: '1.5rem', padding: '20px', margin: '50px 0'}}>{feedback}</motion.div>}
@@ -539,9 +614,6 @@ function ChallengeScreen({ onGoToMenu, onGoToProgress, selectedLevel, token, onS
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                {/* THIS IS THE "GO TO NULL" FIX:
-                  It now checks if nextLevelId AND nextLevelName are valid (not null and not the string "null").
-                */}
                 {nextLevelId && nextLevelId !== "null" && nextLevelName && nextLevelName !== "null" ? (
                   <button 
                     className="next-btn" 
@@ -556,7 +628,6 @@ function ChallengeScreen({ onGoToMenu, onGoToProgress, selectedLevel, token, onS
                   </button>
                 )}
 
-                {/* Button 2: Always show "View My Progress" */}
                 <button className="next-btn" onClick={onGoToProgress} style={{ background: "#00c896" }}>
                   View My Progress 📊
                 </button>

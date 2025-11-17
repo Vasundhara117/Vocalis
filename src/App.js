@@ -7,12 +7,13 @@ import MainMenu from "./MainMenu";
 import ChallengeScreen from "./ChallengeScreen";
 import ProgressScreen from "./ProgressScreen";
 import LevelSelect from "./LevelSelect";
-import LeaderboardScreen from "./LeaderboardScreen"; // <-- 1. IMPORT
+import LeaderboardScreen from "./LeaderboardScreen"; 
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState("AUTH"); 
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null); 
+  const [selectedCategory, setSelectedCategory] = useState(null); 
   const [selectedLevel, setSelectedLevel] = useState(1);
 
   // This cleans up old localStorage data on first load
@@ -30,10 +31,39 @@ function App() {
     setCurrentScreen("MENU");
   };
 
-  const handleStartChallenge = () => setCurrentScreen("LEVEL_SELECT");
+  // HANDLER: Starts the game, goes to the Category Select view
+  const handleStartChallenge = () => {
+    setSelectedCategory(null);
+    setCurrentScreen("LEVEL_SELECT");
+  }
+  
+  // HANDLER: Moves from Categories view to the specific Levels view
+  const handleSelectCategory = (categoryName) => {
+      setSelectedCategory(categoryName); 
+      setCurrentScreen("LEVEL_SELECT"); 
+  };
+  
   const handleShowProgress = () => setCurrentScreen("PROGRESS");
-  const handleGoToMenu = () => setCurrentScreen("MENU");
-  const handleShowLeaderboard = () => setCurrentScreen("LEADERBOARD"); // <-- 2. ADD HANDLER
+  
+  // HANDLER: Back button for the main menu (used by Category Select view)
+  const handleGoToMenu = () => {
+      setSelectedCategory(null); 
+      setCurrentScreen("MENU");
+  }
+  
+  // HANDLER: Back button from Levels View to Category Select View
+  const handleGoToCategorySelect = () => {
+      setSelectedCategory(null); 
+      setCurrentScreen("LEVEL_SELECT"); 
+  }
+  
+  // NEW HANDLER: Back button from Challenge Screen to the specific Levels View (FIX)
+  const handleGoBackToLevels = () => {
+      // Keep selectedCategory state intact so LevelSelect renders Levels 1, 2, 3
+      setCurrentScreen("LEVEL_SELECT"); 
+  }
+  
+  const handleShowLeaderboard = () => setCurrentScreen("LEADERBOARD"); 
   
   const handleLogout = () => {
     setUser(null);
@@ -42,8 +72,6 @@ function App() {
     localStorage.removeItem("vocalisToken");
     setCurrentScreen("AUTH");
   };
-
-  const handleGoToLevelSelect = () => setCurrentScreen("LEVEL_SELECT");
 
   const handleSelectLevel = (levelId) => {
     setSelectedLevel(levelId);
@@ -77,9 +105,9 @@ function App() {
             <MainMenu
               user={user}
               token={token}
-              onStartChallenge={handleStartChallenge}
+              onStartChallenge={handleStartChallenge} 
               onShowProgress={handleShowProgress}
-              onShowLeaderboard={handleShowLeaderboard} // <-- 3. PASS HANDLER
+              onShowLeaderboard={handleShowLeaderboard} 
               onLogout={handleLogout}
             />
           </motion.div>
@@ -90,25 +118,27 @@ function App() {
             <LevelSelect
               onSelectLevel={handleSelectLevel}
               onGoToMenu={handleGoToMenu}
+              onGoToCategorySelect={handleGoToCategorySelect} 
+              onSelectCategory={handleSelectCategory} 
+              selectedCategory={selectedCategory} 
             />
           </motion.div>
         )}
 
-        {/* --- THIS BLOCK IS UPDATED --- */}
         {currentScreen === "CHALLENGE" && (
           <motion.div key="challenge" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ width: '100%', position: 'absolute' }}>
             <ChallengeScreen
               token={token}
-              onGoToMenu={handleGoToLevelSelect} 
+              // PROP CHANGE: Use the new handler to go back to the specific levels view
+              onGoToMenu={handleGoBackToLevels} 
               onGoToProgress={handleShowProgress}
-              onShowLeaderboard={handleShowLeaderboard} // <-- 4. ADD THIS PROP
+              onShowLeaderboard={handleShowLeaderboard} 
               selectedLevel={selectedLevel}
               onSelectLevel={handleSelectLevel} 
             />
           </motion.div>
         )}
-        {/* --- END OF UPDATE --- */}
-
+        
         {currentScreen === "PROGRESS" && (
           <motion.div key="progress" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ width: '100%', position: 'absolute' }}>
             <ProgressScreen 
@@ -118,7 +148,6 @@ function App() {
           </motion.div>
         )}
 
-        {/* --- ADD NEW CASE FOR LEADERBOARD --- */}
         {currentScreen === "LEADERBOARD" && (
           <motion.div key="leaderboard" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ width: '100%', position: 'absolute' }}>
             <LeaderboardScreen

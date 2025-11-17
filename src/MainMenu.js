@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
-function MainMenu({ user, onStartChallenge, onShowProgress, token, onLogout }) {
+// <-- 1. ACCEPT onShowLeaderboard AS A PROP
+function MainMenu({ user, onStartChallenge, onShowProgress, token, onLogout, onShowLeaderboard }) {
   const [stats, setStats] = useState({ streak: 0, xp: 0 });
 
   useEffect(() => {
@@ -39,8 +40,8 @@ function MainMenu({ user, onStartChallenge, onShowProgress, token, onLogout }) {
 
       {/* Animated Balloons */}
       <div className="balloon balloon1"><div className="balloon-string"></div></div>
-<div className="balloon balloon2"><div className="balloon-string"></div></div>
-<div className="balloon balloon3"><div className="balloon-string"></div></div>
+      <div className="balloon balloon2"><div className="balloon-string"></div></div>
+      <div className="balloon balloon3"><div className="balloon-string"></div></div>
 
 
       {/* Stats Card */}
@@ -86,6 +87,17 @@ function MainMenu({ user, onStartChallenge, onShowProgress, token, onLogout }) {
         >
           🎤 Start Speaking Game
         </motion.button>
+
+        {/* --- 2. ADD THE NEW BUTTON --- */}
+        <motion.button
+          className="menu-btn leaderboard-btn" 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onShowLeaderboard}
+        >
+          🏆 Leaderboard
+        </motion.button>
+        {/* --- END OF NEW BUTTON --- */}
 
         <motion.button
           className="menu-btn progress-btn"

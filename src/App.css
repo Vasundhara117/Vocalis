@@ -1,207 +1,1596 @@
-// src/App.js
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import "./App.css";
-import AuthScreen from "./AuthScreen"; 
-import MainMenu from "./MainMenu";
-import ChallengeScreen from "./ChallengeScreen";
-import ProgressScreen from "./ProgressScreen";
-import LevelSelect from "./LevelSelect";
-import LeaderboardScreen from "./LeaderboardScreen"; 
-import AchievementScreen from "./AchievementScreen";
-import SpaceshipRevisionGame from "./SpaceshipRevisionGame"; // <-- NEW IMPORT
+/* GLOBAL STYLES  */
 
-function App() {
-  const [currentScreen, setCurrentScreen] = useState("AUTH"); 
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null); 
-  const [selectedCategory, setSelectedCategory] = useState(null); 
-  const [selectedLevel, setSelectedLevel] = useState(1);
-  const [revisionWords, setRevisionWords] = useState([]); // <-- NEW STATE
-
-  // This cleans up old localStorage data on first load
-  useEffect(() => {
-    localStorage.removeItem("vocalisUser");
-    localStorage.removeItem("vocalisToken");
-  }, []);
-
-  // This function is passed to AuthScreen.js
-  const handleLogin = (userObject, authToken) => {
-    setUser(userObject);
-    setToken(authToken);
-    localStorage.setItem("vocalisUser", JSON.stringify(userObject));
-    localStorage.setItem("vocalisToken", authToken); 
-    setCurrentScreen("MENU");
-  };
-
-  // HANDLER: Starts the game, goes to the Category Select view
-  const handleStartChallenge = () => {
-    setSelectedCategory(null);
-    setCurrentScreen("LEVEL_SELECT");
-  }
-  
-  // HANDLER: Moves from Categories view to the specific Levels view
-  const handleSelectCategory = (categoryName) => {
-      setSelectedCategory(categoryName); 
-      setCurrentScreen("LEVEL_SELECT"); 
-  };
-  
-  const handleShowProgress = () => setCurrentScreen("PROGRESS");
-  
-  // HANDLER: Back button for the main menu (used by Category Select view)
-  const handleGoToMenu = () => {
-      setSelectedCategory(null); 
-      setCurrentScreen("MENU");
-  }
-  
-  // HANDLER: Back button from Levels View to Category Select View
-  const handleGoToCategorySelect = () => {
-      setSelectedCategory(null); 
-      setCurrentScreen("LEVEL_SELECT"); 
-  }
-  
-  // NEW HANDLER: Back button from Challenge Screen to the specific Levels View (FIX)
-  const handleGoBackToLevels = () => {
-      // Keep selectedCategory state intact so LevelSelect renders Levels 1, 2, 3
-      setCurrentScreen("LEVEL_SELECT"); 
-  }
-  
-  const handleShowLeaderboard = () => setCurrentScreen("LEADERBOARD"); 
-
-  // --- NEW HANDLER ---
-  const handleShowAchievements = () => setCurrentScreen("ACHIEVEMENTS");
-  
-  const handleLogout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem("vocalisUser");
-    localStorage.removeItem("vocalisToken");
-    setCurrentScreen("AUTH");
-  };
-
-  const handleSelectLevel = (levelId) => {
-    setSelectedLevel(levelId);
-    setCurrentScreen("CHALLENGE");
-  };
-
-  // --- NEW HANDLERS FOR REVISION GAME ---
-  const handleStartRevisionGame = (words) => {
-    // We only want the text from the words, in case it's a picture round
-    const wordsToRevise = words.map(w => (typeof w === 'object' ? w.text : w));
-    setRevisionWords(wordsToRevise);
-    setCurrentScreen("REVISION_GAME");
-  };
-
-  const handleRevisionGameEnd = () => {
-    setRevisionWords([]);
-    setCurrentScreen("LEVEL_SELECT"); // Go back to level select after
-  };
-  // --- END NEW HANDLERS ---
-
-
-  const pageTransition = {
-    type: "spring",
-    stiffness: 300, 
-    damping: 25     
-  };
-
-  const pageVariants = {
-    initial: { opacity: 0, x: 20 },
-    in: { opacity: 1, x: 0 },
-    out: { opacity: 0, x: -20 }
-  };
-
-  return (
-    <div className="App">
-      <AnimatePresence mode="wait">
-        
-        {currentScreen === "AUTH" && (
-          <motion.div key="auth" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ width: '100%', position: 'absolute' }}>
-            <AuthScreen onLogin={handleLogin} />
-          </motion.div>
-        )}
-
-        {currentScreen === "MENU" && (
-          <motion.div key="menu" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ width: '100%', position: 'absolute' }}>
-            <MainMenu
-              user={user}
-              token={token}
-              onStartChallenge={handleStartChallenge} 
-              onShowProgress={handleShowProgress}
-              onShowLeaderboard={handleShowLeaderboard}
-              onShowAchievements={handleShowAchievements} 
-              onLogout={handleLogout}
-            />
-          </motion.div>
-        )}
-
-        {currentScreen === "LEVEL_SELECT" && (
-          <motion.div key="level" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ width: '100%', position: 'absolute' }}>
-            <LevelSelect
-              onSelectLevel={handleSelectLevel}
-              onGoToMenu={handleGoToMenu}
-              onGoToCategorySelect={handleGoToCategorySelect} 
-              onSelectCategory={handleSelectCategory} 
-              selectedCategory={selectedCategory} 
-            />
-          </motion.div>
-        )}
-
-        {currentScreen === "CHALLENGE" && (
-          <motion.div key="challenge" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ width: '100%', position: 'absolute' }}>
-            <ChallengeScreen
-              token={token}
-              onGoToMenu={handleGoBackToLevels} 
-              onGoToProgress={handleShowProgress}
-              onShowLeaderboard={handleShowLeaderboard} 
-              selectedLevel={selectedLevel}
-              onSelectLevel={handleSelectLevel} 
-              onStartRevisionGame={handleStartRevisionGame} // <-- NEW PROP
-            />
-          </motion.div>
-        )}
-        
-        {currentScreen === "PROGRESS" && (
-          <motion.div key="progress" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ width: '100%', position: 'absolute' }}>
-            <ProgressScreen 
-              token={token}
-              onGoToMenu={handleGoToMenu} 
-            />
-          </motion.div>
-        )}
-
-        {currentScreen === "LEADERBOARD" && (
-          <motion.div key="leaderboard" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ width: '100%', position: 'absolute' }}>
-            <LeaderboardScreen
-              onGoToMenu={handleGoToMenu} 
-            />
-          </motion.div>
-        )}
-
-        {currentScreen === "ACHIEVEMENTS" && (
-          <motion.div key="achievements" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ width: '100%', position: 'absolute' }}>
-            <AchievementScreen 
-              token={token}
-              onGoToMenu={handleGoToMenu} 
-            />
-          </motion.div>
-        )}
-
-        {/* --- NEW SCREEN --- */}
-        {currentScreen === "REVISION_GAME" && (
-          <motion.div key="revision" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ width: '100%', position: 'absolute' }}>
-            <SpaceshipRevisionGame
-              words={revisionWords}
-              token={token}
-              onGameEnd={handleRevisionGameEnd} 
-            />
-          </motion.div>
-        )}
-        {/* --- END NEW SCREEN --- */}
-
-      </AnimatePresence>
-    </div>
-  );
+.App-header {
+  background-color: #fff9ec; 
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #333;
+  text-align: center;
+  padding: 20px;
 }
 
-export default App;
+/* WORD DISPLAY */
+
+.word-container {
+  font-size: 64px;
+  font-weight: 800;
+  color: #ff7b00;
+  margin: 20px;
+  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+/*MIC BUTTON */
+
+.mic-button {
+  font-size: 1.2rem;
+  border: none;
+  background: #007cff;
+  color: white;
+  padding: 14px 28px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+  box-shadow: 0 3px 8px rgba(0, 124, 255, 0.3);
+}
+
+.mic-button:hover {
+  background: #1492ff;
+  transform: scale(1.05);
+}
+
+/*FEEDBACK + ENCOURAGEMENT  */
+
+.feedback-text {
+  margin-top: 15px;
+  font-size: 1.3rem;
+  color: #2b2b2b; 
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.encouragement-text {
+  margin-top: 6px;
+  font-size: 1.2rem;
+  color: #ff9b00; 
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  transition: all 0.4s ease;
+}
+
+/* STARS */
+
+.star-container {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  font-size: 2rem;
+  margin-top: 15px;
+}
+
+.star.active {
+  text-shadow: 0 0 15px gold;
+  transform: scale(1.3);
+}
+
+/*ACCURACY DISPLAY*/
+
+.accuracy-display.subtle {
+  font-size: 1rem;
+  margin-top: 8px;
+  font-weight: 600;
+  color: #333;
+  opacity: 0.9;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+
+/*NEXT BUTTON*/
+
+.next-btn {
+  margin-top: 25px;
+  padding: 10px 24px;
+  font-size: 1.1rem;
+  border-radius: 12px;
+  border: none;
+  background-color: #00c896;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s ease;
+  box-shadow: 0 3px 8px rgba(0, 200, 150, 0.3);
+}
+
+.next-btn:hover {
+  background-color: #00e1b2;
+  transform: scale(1.05);
+}
+
+/*MENU + PROFILE*/
+
+button {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-size: 18px;
+  background-color: #ffd36b;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  background-color: #ffb84d;
+}
+
+/*PROGRESS SECTION*/
+
+.progress-section {
+  background: #fff7e1;
+  border-radius: 20px;
+  padding: 20px;
+  margin: 20px;
+  width: 320px;
+  text-align: left;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.progress-section h3 {
+  color: #ff7b00;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.progress-section li {
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+  color: #444;
+}
+
+/*CLEAR BUTTON*/
+
+.clear-button {
+  background: #ff9b85;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: 0.3s;
+}
+
+.clear-button:hover {
+  background: #ff6f61;
+}
+
+/*PROFILE FORM */
+
+.profile-form {
+  background: #fff9ec;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  width: 350px;
+  text-align: left;
+}
+
+.input-group label {
+  font-weight: bold;
+  color: #ff7b00;
+  margin-bottom: 5px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 2px solid #ffd36b;
+  font-size: 16px;
+}
+
+.input-group input:focus {
+  border-color: #ffb84d;
+}
+
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.avatar-option {
+  font-size: 30px;
+  background: #fff;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+  text-align: center;
+}
+
+.avatar-option:hover {
+  background-color: #fff2d4;
+}
+
+.avatar-option.selected {
+  border-color: #ffb84d;
+  background-color: #fff2d4;
+}
+.hear-button {
+  padding: 12px 22px;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 12px;
+  background-color: #ff9b00;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s ease;
+  box-shadow: 0 3px 8px rgba(255, 155, 0, 0.4);
+}
+.hear-button {
+  padding: 12px 22px;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 12px;
+  background-color: #ff9b00;
+  color: white;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  box-shadow: 0 0 15px rgba(255, 155, 0, 0.4);
+  animation: gentlePulse 2s infinite ease-in-out;
+}
+body {
+  background: linear-gradient(180deg, #fff3d6 0%, #ffe1b2 100%);
+  font-family: 'Poppins', sans-serif;
+}
+.word-container {
+  font-size: 70px;
+  color: #ff6b00;
+  font-weight: 800;
+  animation: float 2s ease-in-out infinite alternate;
+}
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(180deg, #fff3d6 0%, #ffe1b2 100%);
+}
+
+.App-header {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  text-align: center;
+}
+
+.back-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: #ffd36b;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+.level-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.progress-bar {
+  width: 200px;
+  height: 8px;
+  background: #ffe4b2;
+  border-radius: 5px;
+  overflow: hidden;
+}
+/* --- ADD THESE STYLES TO THE END OF App.css --- */
+
+/* Auth Form Polish */
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* Adds nice spacing between items */
+  width: 380px;
+  padding: 35px;
+}
+
+.start-button {
+  width: 100%;
+  padding: 14px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-top: 10px;
+  background-color: #ffb84d;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 184, 77, 0.4);
+}
+
+.start-button:hover {
+  background-color: #ffac33;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 184, 77, 0.5);
+}
+/* --- ADD THIS TO THE END OF App.css --- */
+/* --- ADD THESE STYLES for ProgressScreen --- */
+
+.progress-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* One column on mobile */
+  gap: 20px;
+  margin-top: 20px;
+  width: 100%;
+  max-width: 900px;
+  padding: 0 10px;
+}
+
+/* On wider screens, show two columns */
+@media (min-width: 768px) {
+  .progress-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* This is your existing style, but we're tweaking it */
+.progress-section {
+  background: #fff; /* Brighter white background */
+  border-radius: 20px;
+  padding: 20px;
+  width: auto; /* Allow grid to control width */
+  margin: 0; /* Remove old margin */
+  text-align: left;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-top: 8px solid; /* Use theme color */
+}
+
+.progress-section h2 {
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 10px;
+}
+
+.progress-subsection {
+  margin-bottom: 15px;
+}
+
+.progress-subsection h3 {
+  color: #333;
+  font-size: 1.2rem;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.progress-subsection ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.progress-subsection li {
+  font-size: 1rem;
+  margin-bottom: 0;
+  background: #f4f4f4;
+  color: #555;
+  padding: 5px 12px;
+  border-radius: 15px;
+  font-weight: 500;
+}
+
+.progress-subsection p {
+  font-size: 0.9rem;
+  color: #777;
+  font-style: italic;
+  padding-left: 5px;
+}
+
+/* Summary box at the top */
+.progress-summary {
+  background: #fff;
+  border-radius: 15px;
+  padding: 20px 30px;
+  width: 90%;
+  max-width: 860px; /* Match the grid */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-top: 8px solid #00c896; /* Green */
+  margin-bottom: 20px;
+}
+
+.progress-summary p {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 10px 0;
+  display: flex;
+  justify-content: space-between;
+}
+.playback-btn {
+  background: #007cff; /* Blue to be different from orange "Hear It" */
+  border: none;
+  border-radius: 15px;
+  padding: 12px 22px;
+  font-size: 20px;
+  margin: 0; /* Margin is handled by the button-row */
+  cursor: pointer;
+  transition: 0.2s;
+  color: white;
+  font-weight: 600;
+}
+
+.playback-btn:hover {
+  background: #1492ff;
+  transform: scale(1.05);
+}
+/* Auth Toggle Button */
+.auth-toggle-btn {
+  background: none;
+  border: none;
+  color: #007cff; /* <-- HERE IS THE BLUE */
+  cursor: pointer;
+  margin-top: 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+/* --- ADD THIS TO THE END OF App.css --- */
+
+.playback-btn {
+  background: #007cff;
+  border: none;
+  border-radius: 12px; /* <-- Match */
+  padding: 10px 18px;    /* <-- Match */
+  font-size: 18px;       /* <-- Match */
+  margin: 0;
+  cursor: pointer;
+  transition: 0.3s;
+  color: white;
+  font-weight: 600; /* Keep this to make text look good */
+}
+
+.playback-btn:hover {
+  background: #1492ff;
+  transform: scale(1.05);
+}
+.auth-toggle-btn:hover {
+  color: #1492ff; /* <-- HERE IS THE LIGHTER BLUE HOVER */
+  text-decoration: underline;
+}
+
+/* Auth Error Message */
+.auth-error-text {
+  color: #d90429;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0;
+  text-align: center;
+}
+.progress-fill {
+  height: 100%;
+  background: #ff8b00;
+  transition: width 0.4s ease;
+}
+
+.mascot {
+  font-size: 4rem;
+  margin: 10px 0;
+}
+
+.word-bubble {
+  font-size: 72px;
+  color: #ff6b00;
+  font-weight: 800;
+  background: #fff4d8;
+  padding: 20px 40px;
+  border-radius: 40px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  margin: 20px 0;
+}
+
+.star-container {
+  font-size: 2rem;
+  margin: 10px 0;
+}
+
+.star.active {
+  text-shadow: 0 0 15px gold;
+  transform: scale(1.2);
+}
+
+.mic-btn, .hear-btn, .next-btn {
+  background: #ffd36b;
+  border: none;
+  border-radius: 15px;
+  padding: 12px 30px;
+  font-size: 20px;
+  margin: 10px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.mic-btn:hover, .hear-btn:hover, .next-btn:hover {
+  background: #ffb84d;
+}
+
+.feedback-banner {
+  background: #fff5da;
+  padding: 10px 20px;
+  border-radius: 15px;
+  font-weight: 600;
+  margin-top: 10px;
+}
+.level-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 30px;
+}
+
+/* In src/App.css */
+
+.level-card {
+  width: 280px;
+  padding: 20px;
+  border-radius: 20px;
+  color: #333;
+  text-align: center;
+  
+  /* Make the shadow slightly softer and more diffuse */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  
+  /* Add a subtle border to give it a defined edge */
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  
+  /* These are needed for the new "sheen" effect */
+  position: relative;
+  overflow: hidden; 
+  
+  /* Make sure the shadow changes on hover, too */
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+/* This ::after pseudo-element adds a "glossy" sheen on top */
+.level-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* A very faint white gradient to mimic light hitting a surface */
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0) 40%
+  );
+  pointer-events: none; /* So it doesn't block clicks */
+  border-radius: 20px; /* Match the parent's border radius */
+}
+
+.level-card:hover {
+  transform: translateY(-5px);
+  /* Make the shadow "grow" a bit when it's "lifted" */
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+.examples {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+
+.examples span {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 10px;
+  padding: 5px 10px;
+  font-weight: bold;
+}
+
+.start-level-btn {
+  background: #ffb84d;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s;
+}
+
+.start-level-btn:hover {
+  background: #ffa931;
+}
+
+.encouragement {
+  color: #ff7b00;
+  font-weight: 500;
+  margin-top: 10px;
+}
+
+.accuracy.subtle {
+  font-size: 1.1rem;
+  color: #555;
+  margin-top: 8px;
+}
+
+@keyframes float {
+  from { transform: translateY(0px); }
+  to { transform: translateY(-10px); }
+}
+
+.hear-button:hover {
+  background-color: #ff7b00;
+  transform: scale(1.05);
+}
+
+@keyframes gentlePulse {
+  0% { box-shadow: 0 0 10px rgba(255, 155, 0, 0.4); }
+  50% { box-shadow: 0 0 20px rgba(255, 155, 0, 0.7); }
+  100% { box-shadow: 0 0 10px rgba(255, 155, 0, 0.4); }
+}
+
+.hear-button:hover {
+  background-color: #ff7b00;
+  transform: scale(1.05);
+}
+
+/* ---------------- ANIMATION ---------------- */
+
+@keyframes pop {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+/* ---------- CHILD-FRIENDLY SKY BACKGROUND ---------- */
+
+.sky-wrapper {
+  width: 100%;
+  height: 100vh;
+  position: relative;
+  background: linear-gradient(to bottom, #99ccff, #e6f4ff);
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 15px;
+}
+
+/* ---------- FLUFFY CHILD-FRIENDLY CLOUDS ---------- */
+
+.cloud {
+  position: absolute;
+  width: 180px;
+  height: 60px;
+  background: #ffffff;
+  border-radius: 50px;
+  opacity: 0.85;
+  animation: cloudFloat 25s linear infinite;
+  pointer-events: none;
+  filter: blur(0.5px);
+}
+
+/* Add fluffy bumps */
+.cloud::before,
+.cloud::after {
+  content: "";
+  position: absolute;
+  background: #ffffff;
+  width: 80px;
+  height: 80px;
+  top: -20px;
+  border-radius: 50%;
+}
+
+.cloud::before {
+  left: 20px;
+}
+
+.cloud::after {
+  right: 10px;
+  top: -25px;
+}
+
+/* Cloud positions + different sizes */
+.cloud1 {
+  top: 15%;
+  left: -250px;
+  transform: scale(1.2);
+  animation-duration: 30s;
+}
+
+.cloud2 {
+  top: 45%;
+  left: -300px;
+  transform: scale(0.95);
+  animation-duration: 38s;
+}
+
+.cloud3 {
+  top: 70%;
+  left: -280px;
+  transform: scale(1.1);
+  animation-duration: 34s;
+}
+
+@keyframes cloudFloat {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(150vw); }
+}
+
+
+/* ---------- CHILD LOGIN CARD ---------- */
+
+.child-card {
+  width: 360px;
+  padding: 30px;
+  background: #ffffffcc;
+  border-radius: 25px;
+  border: 3px solid #77aadd;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+  z-index: 5;
+  text-align: center;
+}
+
+/* ---------- TEXT ---------- */
+
+.child-title {
+  font-size: 28px;
+  color: #336699;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.child-subtitle {
+  color: #4477aa;
+  font-size: 15px;
+  margin-bottom: 18px;
+}
+
+/* ---------- INPUTS ---------- */
+
+.input-group {
+  text-align: left;
+  margin-bottom: 15px;
+}
+
+.input-group label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #335577;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 2px solid #aaccee;
+  outline: none;
+  background: #ffffff;
+  font-size: 15px;
+}
+
+/* ---------- AVATARS ---------- */
+
+.avatar-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.avatar-option {
+  font-size: 24px;
+  padding: 10px;
+  border-radius: 12px;
+  background: #eef7ff;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.avatar-option:hover {
+  transform: scale(1.1);
+}
+
+.selected-avatar {
+  border: 2px solid #77aadd;
+  background: #dff0ff;
+  box-shadow: 0 0 10px rgba(120, 170, 255, 0.6);
+}
+
+/* ---------- BUTTON ---------- */
+
+.child-btn {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  background: #77aadd;
+  color: white;
+  border-radius: 12px;
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.child-btn:hover {
+  background: #5599cc;
+}
+
+.switch-mode-btn {
+  margin-top: 15px;
+  font-size: 14px;
+  color: #336699;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* ---------- ERROR TEXT ---------- */
+
+.auth-error-text {
+  color: #cc4444;
+  margin: 5px 0;
+  font-size: 14px;
+}
+/* ---------------- REAL FLOATING BALLOONS (SAFE, CLEAN) ---------------- */
+
+.balloon {
+  position: absolute;
+  width: 80px;
+  height: 100px;
+  background: #ff8b8b;
+  border-radius: 50% 50% 45% 45%;
+  box-shadow: inset -6px -12px 0 rgba(0,0,0,0.15);
+  opacity: 0.9;
+  animation: balloonFloatUp 14s linear infinite;
+  z-index: 1;
+  pointer-events: none; /* ensure no UI disturbance */
+}
+
+/* Balloon string */
+.balloon::after {
+  content: "";
+  position: absolute;
+  width: 2.5px;
+  height: 75px;
+  background: rgba(60, 60, 60, 0.7);
+  bottom: -75px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Colorblind-safe colors */
+.balloon1 { background: #ff8b8b; left: 20%; animation-duration: 16s; }
+.balloon2 { background: #85d1ff; left: 50%; animation-duration: 18s; }
+.balloon3 { background: #a8e063; left: 75%; animation-duration: 15s; }
+
+/* Smooth upward motion */
+@keyframes balloonFloatUp {
+  0% {
+    transform: translateY(110vh) translateX(0);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(40vh) translateX(-10px);
+  }
+  100% {
+    transform: translateY(-20vh) translateX(10px);
+    opacity: 1;
+  }
+}
+/* ---------------- MAIN MENU FIX (RESTORE CENTER + SKY) ---------------- */
+
+.mainmenu-wrapper {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+
+  /* Soft sky gradient */
+  background: linear-gradient(to bottom, #a3d8ff, #e7f4ff);
+  padding: 20px;
+}
+
+/* Ensure content is centered */
+.menu-title, 
+.menu-avatar,
+.menu-subtitle,
+.menu-buttons,
+.logout-btn {
+  z-index: 5;   /* keep above balloons */
+  position: relative;
+  text-align: center;
+}
+
+/* Fix the title layout (name + avatar below it) */
+.menu-title {
+  font-size: 2.4rem;
+  color: #334eac;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.menu-avatar {
+  display: block;
+  font-size: 4rem;
+  margin-top: 10px;
+}
+
+.menu-subtitle {
+  font-size: 1.2rem;
+  color: #4466aa;
+  margin-bottom: 30px;
+}
+
+/* Center menu buttons vertically */
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+  max-width: 300px;
+  align-items: center;
+}
+
+.menu-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 20px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  transition: 0.2s ease;
+}
+
+/* Colorblind-safe buttons */
+.play-btn {
+  background: #ffb74d;
+  color: #fff;
+}
+.play-btn:hover {
+  background: #ffa726;
+}
+
+.progress-btn {
+  background: #64b5f6;
+  color: white;
+}
+.progress-btn:hover {
+  background: #42a5f5;
+}
+
+/* Logout button */
+.logout-btn {
+  background: none;
+  border: none;
+  color: #336699;
+  margin-top: 30px;
+  text-decoration: underline;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+/* ---------------- STATS CARD ---------------- */
+.stats-card {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 5;
+
+  background: white;
+  padding: 12px 22px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #333;
+}
+
+.divider {
+  width: 1px;
+  height: 28px;
+  background: #ccc;
+}
+
+.xp-text {
+  color: #00a86b;
+}
+/* ---------------- UPGRADED 3D BALLOONS ---------------- */
+
+.balloon {
+  position: absolute;
+  width: 65px;
+  height: 85px;
+  background: radial-gradient(circle at 30% 30%,
+      rgba(255, 180, 90, 1) 0%,
+      rgba(255, 120, 60, 1) 60%,
+      rgba(255, 95, 40, 1) 100%);
+  border-radius: 50% 50% 45% 45%;
+  animation: floatUp 14s linear infinite,
+            wiggle 3.8s ease-in-out infinite;
+  z-index: 1; /* behind content */
+  opacity: 0.92;
+}
+
+/* Balloon highlight */
+.balloon::before {
+  content: "";
+  position: absolute;
+  top: 18%;
+  left: 30%;
+  width: 18px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+}
+
+/* Balloon knot */
+.balloon::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: #cc5433;
+  border-radius: 20%;
+  transform: translateX(-50%);
+}
+
+/* Balloon string */
+.balloon-string {
+  position: absolute;
+  bottom: -45px;
+  left: 50%;
+  width: 2px;
+  height: 45px;
+  background: rgba(80, 80, 80, 0.55);
+  transform: translateX(-50%);
+}
+
+@keyframes floatUp {
+  0% { transform: translateY(100vh) translateX(0); }
+  100% { transform: translateY(-120vh) translateX(0); }
+}
+
+/* Slight side-to-side realistic drift */
+@keyframes wiggle {
+  0% { transform: translateX(-10px); }
+  50% { transform: translateX(10px); }
+  100% { transform: translateX(-10px); }
+}
+
+/* Balloon positions & sizes */
+.balloon1 {
+  left: 15%;
+  animation-duration: 17s;
+  transform: scale(1.0);
+}
+.balloon2 {
+  left: 45%;
+  animation-duration: 22s;
+  transform: scale(1.3);
+}
+.balloon3 {
+  left: 75%;
+  animation-duration: 19s;
+  transform: scale(0.85);
+}
+
+/* ---------------- CLEAN FINAL MAIN MENU STYLES ---------------- */
+
+/* Replace old sky-wrapper or mainmenu-wrapper for this screen */
+.mainmenu-container {
+  min-height: 100vh;
+  width: 100%;
+  background: linear-gradient(to bottom, #a3d8ff, #e7f4ff);
+  position: relative;
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 25px;
+}
+
+/* Keep all content above balloons */
+.menu-title,
+.menu-avatar,
+.menu-subtitle,
+.menu-buttons,
+.logout-btn,
+.stats-card {
+  position: relative;
+  z-index: 5;
+}
+
+/* Greeting */
+.menu-title {
+  font-size: 2.4rem;
+  color: #334eac;
+  font-weight: 700;
+  text-align: center;
+}
+
+.menu-avatar {
+  font-size: 4rem;
+  margin-top: 10px;
+  display: block;
+}
+
+.menu-subtitle {
+  font-size: 1.2rem;
+  color: #4466aa;
+  margin-bottom: 30px;
+}
+
+/* Buttons */
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 10px;
+}
+
+.menu-btn {
+  width: 100%;
+  border-radius: 20px;
+  padding: 16px;
+  font-size: 1.2rem;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+.play-btn {
+  background: #ffb74d;
+  color: #fff;
+}
+.play-btn:hover {
+  background: #ffa726;
+}
+
+.progress-btn {
+  background: #64b5f6;
+  color: white;
+}
+.progress-btn:hover {
+  background: #42a5f5;
+}
+
+/* Logout */
+.logout-btn {
+  background: none;
+  border: none;
+  margin-top: 20px;
+  text-decoration: underline;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #336699;
+  cursor: pointer;
+}
+
+/* Stats top-right */
+.stats-card {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: white;
+  padding: 12px 22px;
+  border-radius: 20px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.xp-text {
+  color: #00a86b;
+}
+
+.divider {
+  width: 2px;
+  height: 28px;
+  background: #ccc;
+}
+
+/* ---------------- POLISHED 3D BALLOONS ---------------- */
+
+.balloon {
+  position: absolute;
+  width: 70px;
+  height: 95px;
+  background: radial-gradient(circle at 30% 30%,
+      rgba(255, 170, 80, 1) 0%,
+      rgba(255, 120, 60, 1) 55%,
+      rgba(255, 95, 40, 1) 100%);
+  border-radius: 50% 50% 45% 45%;
+  z-index: 1;
+  opacity: 0.92;
+
+  animation: balloonRise 14s linear infinite,
+            balloonWiggle 4s ease-in-out infinite;
+}
+
+/* Highlight */
+.balloon::before {
+  content: "";
+  position: absolute;
+  top: 15%;
+  left: 30%;
+  width: 16px;
+  height: 26px;
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+}
+
+/* Knot */
+.balloon::after {
+  content: "";
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: #c65433;
+  border-radius: 20%;
+  transform: translateX(-50%);
+}
+/* --- ADD THESE STYLES TO THE END OF src/App.css --- */
+
+/* New Leaderboard Button Style (purple) */
+.leaderboard-btn {
+  background: #9b59b6; 
+  color: white;
+}
+.leaderboard-btn:hover {
+  background: #8e44ad;
+}
+
+/* Leaderboard List Styles */
+.leaderboard-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  max-width: 500px;
+}
+
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+  font-size: 1.1rem;
+}
+
+.leaderboard-rank {
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: #ff7b00;
+  width: 40px;
+}
+
+.leaderboard-avatar {
+  font-size: 1.5rem;
+  margin-right: 10px;
+}
+
+.leaderboard-name {
+  font-weight: 600;
+  color: #333;
+}
+/* --- ADD THESE STYLES FOR PICTURE ROUND --- */
+
+.picture-round-image {
+  width: 100%;
+  max-width: 300px;
+  height: 300px;
+  border-radius: 20px;
+  background-color: #fff;
+  object-fit: contain; /* Use 'contain' to see the whole image */
+  padding: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.word-bubble-small {
+  font-size: 48px;
+  color: #ff6b00;
+  font-weight: 800;
+  background: #fff4d8;
+  padding: 0px 30px;
+  line-height: 80px;
+  border-radius: 50%; /* Make it a circle */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  margin: 10px 0;
+}
+.leaderboard-score {
+  margin-left: auto;
+  color: #00c896;
+  font-size: 1.2rem;
+}
+
+.leaderboard-combo {
+  font-size: 0.9rem;
+  color: #777;
+  margin-left: 10px;
+  width: 80px; /* Align combos */
+  text-align: right;
+}
+/* Strings */
+.balloon-string {
+  position: absolute;
+  bottom: -55px;
+  left: 50%;
+  width: 2px;
+  height: 55px;
+  background: rgba(60, 60, 60, 0.6);
+  transform: translateX(-50%);
+}
+/*
+=================================
+ ACHIEVEMENT SCREEN STYLES
+=================================
+*/
+
+.achievement-screen {
+  text-align: center;
+}
+
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 250px));
+  gap: 1.5rem;
+  padding: 1rem 2rem;
+  max-width: 1200px; /* <--- CHANGE THIS from 900px */
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+.achievement-card {
+  background-color: #f0f0f0; /* Darker background for cards */
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  border: 1px solid #ddd;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+}
+
+.achievement-card.locked {
+  background-color: #e9e9e9;
+  opacity: 0.6;
+}
+/*
+=================================
+ HEADER & BACK BUTTON STYLES (REVISED)
+=================================
+*/
+
+/* This targets the header on Progress, Trophies, etc. */
+.screen-container .header {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* This centers the title */
+  position: relative; /* Allows us to position the back button */
+  padding: 1rem 1.5rem;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.screen-container .header h1 {
+  margin: 0;
+  font-size: 1.5rem; /* --- ADJUSTED: Was 1.8rem --- */
+  color: #333;
+}
+
+.back-button {
+  position: absolute; /* Pulls the button out of the flow */
+  left: 1.5rem; /* Pins it to the left */
+  top: 50%;
+  transform: translateY(-50%); /* Perfectly centers it vertically */
+
+  /* --- ADJUSTED: New blue style --- */
+  background: #3498db;
+  border: none;
+  color: white;
+  
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  background: #2980b9; /* Darker blue on hover */
+}
+
+
+/*
+=================================
+ ACHIEVEMENT SCREEN STYLES (REVISED)
+=================================
+*/
+
+.achievement-screen {
+  text-align: center;
+}
+
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem 2rem;
+  max-width: 900px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+.achievement-card {
+  background-color: #f0f0f0; 
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  border: 1px solid #ddd;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+}
+
+.achievement-card.locked {
+  background-color: #e9e9e9;
+  opacity: 0.6;
+}
+
+.achievement-card.earned {
+  background-color: #fff;
+  border-color: #FFD700; 
+  box-shadow: 0 6px 15px rgba(255, 215, 0, 0.3);
+}
+
+.achievement-icon {
+  font-size: 2.5rem; /* --- ADJUSTED: Was 3rem --- */
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.achievement-name {
+  font-size: 1rem; /* --- ADJUSTED: Was 1.1rem --- */
+  font-weight: 600;
+  margin: 0.5rem 0;
+  color: #333;
+}
+
+.achievement-card.locked .achievement-name {
+  color: #777;
+}
+
+.achievement-desc {
+  font-size: 0.85rem; /* --- ADJUSTED: Was 0.9rem --- */
+  color: #666;
+  min-height: 40px; 
+}
+
+.achievement-date {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #008a00; 
+  margin-top: 1rem;
+}
+.achievement-card.earned {
+  background-color: #fff;
+  border-color: #FFD700; /* Gold border for earned */
+  box-shadow: 0 6px 15px rgba(255, 215, 0, 0.3);
+}
+
+.achievement-icon {
+  font-size: 3rem;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.achievement-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0.5rem 0;
+  color: #333;
+}
+
+.achievement-card.locked .achievement-name {
+  color: #777;
+}
+
+.achievement-desc {
+  font-size: 0.9rem;
+  color: #666;
+  min-height: 40px; /* Give some consistent height */
+}
+
+.achievement-date {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #008a00; /* Green for the earned date */
+  margin-top: 1rem;
+}
+/* Smooth upward movement */
+@keyframes balloonRise {
+  0% { transform: translateY(110vh); }
+  100% { transform: translateY(-120vh); }
+}
+
+/* Gentle sway */
+@keyframes balloonWiggle {
+  0% { margin-left: -10px; }
+  50% { margin-left: 10px; }
+  100% { margin-left: -10px; }
+}
+
+/* Different positions + sizes */
+.balloon1 { left: 18%; animation-duration: 17s; transform: scale(1); }
+.balloon2 { left: 50%; animation-duration: 21s; transform: scale(1.25); }
+.balloon3 { left: 78%; animation-duration: 18s; transform: scale(0.9); }

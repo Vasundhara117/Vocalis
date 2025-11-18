@@ -1,5 +1,5 @@
 // src/SpaceshipRevisionGame.js
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react'; // <-- IMPORT useLayoutEffect
 import { motion, AnimatePresence } from 'framer-motion';
 import './App.css'; // We can reuse the main CSS for styling
 
@@ -9,7 +9,11 @@ const SPACESHIP_SPEED = 20;
 const LASER_SPEED = 12;
 
 // --- Helper Functions ---
-const getRandomX = (gameWidth) => Math.floor(Math.random() * (gameWidth - 150)) + 50;
+const getRandomX = (gameWidth) => {
+  // Ensure gameWidth is a number and greater than 150
+  const width = typeof gameWidth === 'number' && gameWidth > 150 ? gameWidth : 300; // Default to 300 if invalid
+  return Math.floor(Math.random() * (width - 150)) + 50;
+}
 const createWord = (word, id, gameWidth) => ({
   id: id,
   word: word,
@@ -26,35 +30,45 @@ function SpaceshipRevisionGame({ words, token, onGameEnd }) {
   const [lasers, setLasers] = useState([]);
   const [gameState, setGameState] = useState("PLAYING"); // PLAYING, WON, LOST
   
+  // --- NEW STATE FOR RELIABLE INITIALIZATION ---
+  const [gameWidth, setGameWidth] = useState(0);
+  
   // --- UI/Feedback State ---
   const [isRecording, setIsRecording] = useState(false);
   const [feedback, setFeedback] = useState("Speak the words to destroy them!");
 
   // --- Refs ---
-  const gameAreaRef = useRef(null);
+  const gameAreaRef = useRef(null); // This ref is now just for measurement
   const gameLoopRef = useRef(null);
-  const gameWidthRef = useRef(window.innerWidth);
   
   // --- Audio Recording Refs ---
   const recorderRef = useRef(null);
   const streamRef = useRef(null);
 
-  // --- 1. Initialize Game ---
+  // --- 1. NEW Initialization Step 1: Measure the Game Area ---
+  // useLayoutEffect runs *after* the DOM is painted but *before* other effects
+  useLayoutEffect(() => {
+    if (gameAreaRef.current) {
+      setGameWidth(gameAreaRef.current.clientWidth);
+    }
+  }, []); // Runs once after layout is guaranteed
+
+  // --- 2. NEW Initialization Step 2: Create Words (after measurement) ---
+  // This effect runs only AFTER gameWidth is set
   useEffect(() => {
-    if (words.length > 0) {
-      gameWidthRef.current = gameAreaRef.current ? gameAreaRef.current.clientWidth : window.innerWidth;
-      const initialWords = words.map((w, i) => createWord(w, i, gameWidthRef.current));
+    // Only run if words are loaded AND gameWidth has been measured
+    if (words.length > 0 && gameWidth > 0) {
+      const initialWords = words.map((w, i) => createWord(w, i, gameWidth));
       setWordQueue(initialWords);
       setGameWords([]); // Start with no words on screen
-      setSpaceshipX(gameWidthRef.current / 2 - 25); // Center ship
+      setSpaceshipX(gameWidth / 2 - 25); // Center ship
     }
-  }, [words]); // Only runs once when words are loaded
+  }, [words, gameWidth]); // Dependencies are now 'words' and 'gameWidth'
 
-  // --- 2. Keyboard Controls for Spaceship ---
+  // --- 3. Keyboard Controls for Spaceship ---
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (gameState !== "PLAYING") return;
-      const gameWidth = gameWidthRef.current;
+      if (gameState !== "PLAYING" || gameWidth === 0) return; // Don't move if not ready
 
       setSpaceshipX((prevX) => {
         if (e.key === 'ArrowLeft') {
@@ -69,12 +83,13 @@ function SpaceshipRevisionGame({ words, token, onGameEnd }) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState]);
+  }, [gameState, gameWidth]); // Added gameWidth dependency
 
 
-  // --- 3. Main Game Loop (The "Engine") ---
+  // --- 4. Main Game Loop (The "Engine") ---
   useEffect(() => {
-    if (gameState !== "PLAYING") {
+    // Do not start the loop until the game is initialized
+    if (gameState !== "PLAYING" || gameWidth === 0) {
        if(gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current);
        return;
     }
@@ -89,20 +104,18 @@ function SpaceshipRevisionGame({ words, token, onGameEnd }) {
       let wordsHitFloor = 0;
       let wordsToDestroy = new Set();
       
-      // --- LOGIC RE-ORDERED: STEP A: Move Lasers & Check Hits ---
-      // We also make the collision logic more generous
+      // --- STEP A: Move Lasers & Check Hits ---
       setLasers(currentLasers => 
         currentLasers.filter(laser => {
           laser.y -= LASER_SPEED;
           
           const targetWord = gameWords.find(w => w.id === laser.targetId);
 
-          // --- MORE GENEROUS COLLISION LOGIC ---
           if (targetWord && 
-              laser.y <= targetWord.y + 20 && // Laser is at or above the word
-              laser.y >= targetWord.y - 20 && // Laser is not too far past
-              laser.x >= targetWord.x - 20 && // Laser can be 20px left
-              laser.x <= targetWord.x + (targetWord.word.length * 20) + 40) // Generous width check
+              laser.y <= targetWord.y + 20 && 
+              laser.y >= targetWord.y - 20 && 
+              laser.x >= targetWord.x - 20 &&
+              laser.x <= targetWord.x + (targetWord.word.length * 20) + 40)
           {
             wordsToDestroy.add(targetWord.id);
             return false; // Laser hit, remove it
@@ -112,11 +125,12 @@ function SpaceshipRevisionGame({ words, token, onGameEnd }) {
         })
       );
 
-      // --- LOGIC RE-ORDERED: STEP B: Move Words & Check Floor ---
+      // --- STEP B: Move Words & Check Floor ---
       setGameWords(currentGameWords => 
         currentGameWords.filter(word => {
           // If word is in the 'toDestroy' set, just remove it
           if (wordsToDestroy.has(word.id)) {
+            playSound("success"); // Play hit sound
             return false;
           }
           
@@ -130,14 +144,7 @@ function SpaceshipRevisionGame({ words, token, onGameEnd }) {
         })
       );
       
-      // --- LOGIC RE-ORDERED: STEP C: Update Words Hit Counter ---
-      // This now happens *before* the game over check
-      if (wordsToDestroy.size > 0) {
-        setWordsHit(prevHit => prevHit + wordsToDestroy.size);
-        playSound("success"); // Word destroyed sound
-      }
-
-      // --- LOGIC RE-ORDERED: STEP D: Check Win/Loss State ---
+      // --- STEP C: Check Win/Loss State ---
       if (wordsHitFloor > 0) {
         // Game Over
         setGameState("LOST"); 
@@ -160,23 +167,23 @@ function SpaceshipRevisionGame({ words, token, onGameEnd }) {
       if(gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current);
     }
 
-  }, [gameState, gameWords, lasers, wordQueue, words.length]);
+  }, [gameState, gameWords, lasers, wordQueue, words.length, gameWidth]); // Added gameWidth
 
 
-  // --- 4. Spawner Effect (One-by-one) ---
+  // --- 5. Spawner Effect (One-by-one) ---
   useEffect(() => {
-    if (gameState === 'PLAYING' && gameWords.length === 0 && wordQueue.length > 0) {
-      // Spawn the next word
+    // Only spawn if ready
+    if (gameState === 'PLAYING' && gameWords.length === 0 && wordQueue.length > 0 && gameWidth > 0) {
       const nextWord = wordQueue[0];
       const remainingQueue = wordQueue.slice(1);
       
       setWordQueue(remainingQueue);
       setGameWords([nextWord]); // Add the single new word to the game
     }
-  }, [gameWords, wordQueue, gameState]);
+  }, [gameWords, wordQueue, gameState, gameWidth]); // Added gameWidth
 
 
-  // --- 5. Voice Logic ---
+  // --- 6. Voice Logic ---
   const playSound = (type) => {
     const sounds = {
       success: new Audio("https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3"),
@@ -191,7 +198,8 @@ function SpaceshipRevisionGame({ words, token, onGameEnd }) {
   };
 
   const handleSpokenWord = (spokenWord) => {
-    if (gameState !== "PLAYING" || gameWords.length === 0) return;
+    // Don't fire if game isn't ready
+    if (gameState !== "PLAYING" || gameWords.length === 0 || !gameAreaRef.current) return;
 
     // Sanitize the spoken word
     const sanitizedSpokenWord = spokenWord.toUpperCase().trim().replace(/[^A-Z ]/g, "");
@@ -207,15 +215,19 @@ function SpaceshipRevisionGame({ words, token, onGameEnd }) {
       .find(w => sanitizedSpokenWord.includes(w.word.toUpperCase()));
 
     if (targetWord) {
+      // --- THIS IS THE FIX ---
       // FIRE LASER!
       setFeedback(`🔥 Firing at ${targetWord.word}!`);
       playSound("laser");
+      setWordsHit(prevHit => prevHit + 1); // <-- UPDATE COUNT IMMEDIATELY
+      // --- END OF FIX ---
+      
       setLasers(prevLasers => [
         ...prevLasers,
         {
           id: Date.now(),
           x: spaceshipX + 22, 
-          y: gameAreaRef.current.clientHeight - 80, 
+          y: gameAreaRef.current.clientHeight - 80, // Use ref to get height
           targetId: targetWord.id,
         },
       ]);
@@ -272,7 +284,6 @@ function SpaceshipRevisionGame({ words, token, onGameEnd }) {
       const chunks = [];
       recorder.ondataavailable = (e) => chunks.push(e.data);
       
-      // --- THIS IS THE NEW LOGIC ---
       recorder.onstop = () => {
         // 1. Stop all tracks & clean up refs
         if (streamRef.current) {
@@ -289,10 +300,7 @@ function SpaceshipRevisionGame({ words, token, onGameEnd }) {
         setFeedback("Analyzing...");
 
         // 4. Send to server in the background (fire and forget)
-        //    This does not block the user from clicking "Speak" again
         sendToDeepgram(audioBlob).then(() => {
-          // When analysis is done, only update feedback if we are still "Analyzing"
-          // This stops a late response from overwriting a new "Firing at..." message
           setFeedback(prev => (prev === "Analyzing..." ? "Ready!" : prev));
         });
       };
@@ -315,14 +323,14 @@ function SpaceshipRevisionGame({ words, token, onGameEnd }) {
   // --- END OF NEW FUNCTION ---
 
 
-  // --- 6. Render Logic (Updated for "Words Hit") ---
-  const renderGameArea = () => {
+  // --- 7. Render Logic (SIMPLIFIED END SCREENS) ---
+  const renderGameContent = () => {
+    // --- THIS IS THE FIX for the end screens ---
     if (gameState === "WON") {
       return (
         <div className="game-end-screen">
           <h1>🎉 Spaceship Safe! 🎉</h1>
-          {/* --- TEXT UPDATED --- */}
-          <h2>You hit {wordsHit} words!</h2>
+          <h2>Words Hit: {wordsHit}</h2>
           <button className="next-btn" onClick={onGameEnd}>Continue</button>
         </div>
       );
@@ -331,82 +339,128 @@ function SpaceshipRevisionGame({ words, token, onGameEnd }) {
     if (gameState === "LOST") {
       return (
         <div className="game-end-screen">
-          <h1>💥 Game Over 💥</h1>
-          <h2>A word got past you!</h2>
-          {/* --- TEXT UPDATED --- */}
-          <h2>You hit {wordsHit} words.</h2>
+          {/* --- THIS IS THE FIX for the 0 words hit screen --- */}
+          <h1>Game Over</h1>
+          {wordsHit > 0 && (
+            <h2>Words Hit: {wordsHit}</h2>
+          )}
           <button className="next-btn" onClick={onGameEnd}>Continue</button>
         </div>
       );
     }
+    // --- END OF FIX ---
 
     // --- This is the "PLAYING" state ---
+    // Only render if the game is initialized (gameWidth > 0)
+    if (gameState === "PLAYING" && gameWidth > 0) {
+      return (
+        <>
+          <div className="stars-bg"></div>
+          <div className="stars-bg-mid"></div>
+          <div className="stars-bg-far"></div>
+        
+          <AnimatePresence>
+            {gameWords.map((word) => (
+              <motion.div
+                key={word.id}
+                className="word-obstacle-game"
+                initial={{ x: word.x, y: word.y }}
+                animate={{ x: word.x, y: word.y }}
+                exit={{ scale: 0, opacity: 0, transition: { duration: 0.3 } }}
+                transition={{ type: 'linear', duration: 0.05 }}
+              >
+                {word.word}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          
+          <AnimatePresence>
+            {lasers.map((laser) => (
+              <motion.div
+                key={laser.id}
+                className="laser-beam-game"
+                initial={{ x: laser.x, y: laser.y }}
+                animate={{ y: laser.y }}
+                exit={{ opacity: 0 }}
+                transition={{ type: 'linear', duration: 0.05 }}
+              />
+            ))}
+          </AnimatePresence>
+          
+          <motion.div
+            className="spaceship-game"
+            animate={{ x: spaceshipX }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+          >
+            {/* This is a CSS-only spaceship */}
+            <div className="ship-body"></div>
+            <div className="ship-wing-l"></div>
+            <div className="ship-wing-r"></div>
+            <div className="ship-engine"></div>
+          </motion.div>
+        </>
+      );
+    }
+
+    // Default return while loading (gameWidth is 0)
+    // This prevents the "distorted" view
     return (
-      <div className="spaceship-game-area" ref={gameAreaRef}>
-        <div className="stars-bg"></div>
-        <div className="stars-bg-mid"></div>
-        <div className="stars-bg-far"></div>
-      
-        <AnimatePresence>
-          {gameWords.map((word) => (
-            <motion.div
-              key={word.id}
-              className="word-obstacle-game"
-              initial={{ x: word.x, y: word.y }}
-              animate={{ x: word.x, y: word.y }}
-              exit={{ scale: 0, opacity: 0, transition: { duration: 0.3 } }}
-              transition={{ type: 'linear', duration: 0.05 }}
-            >
-              {word.word}
-            </motion.div>
-          ))}
-        </AnimatePresence>
-        
-        <AnimatePresence>
-          {lasers.map((laser) => (
-            <motion.div
-              key={laser.id}
-              className="laser-beam-game"
-              initial={{ x: laser.x, y: laser.y }}
-              animate={{ y: laser.y }}
-              exit={{ opacity: 0 }}
-              transition={{ type: 'linear', duration: 0.05 }}
-            />
-          ))}
-        </AnimatePresence>
-        
-        <motion.div
-          className="spaceship-game"
-          animate={{ x: spaceshipX }}
-          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-        >
-          {/* This is a CSS-only spaceship */}
-          <div className="ship-body"></div>
-          <div className="ship-wing-l"></div>
-          <div className="ship-wing-r"></div>
-          <div className="ship-engine"></div>
-        </motion.div>
+      <div className="game-end-screen">
+        <h2>Loading Game...</h2>
       </div>
     );
   };
 
   return (
     <div className="App-header" style={{ justifyContent: 'flex-start', paddingTop: '0', height: '100vh', position: 'relative', background: '#000', width: '100%' }}>
-      <div className="spaceship-hud">
-        {/* --- UPDATED HUD --- */}
-        <h2>Words Hit: {wordsHit}</h2>
-        <div className="feedback-banner" style={{ minHeight: '50px', background: 'transparent', color: 'white' }}>{feedback}</div>
-        
-        {/* --- UPDATED BUTTON --- */}
-        <button className="mic-btn" onClick={handleMicClick} disabled={isRecording || gameState !== 'PLAYING'}>
-          {isRecording ? "🎙️..." : "🎙️ Speak"}
-        </button>
+      
+      {/* --- THIS IS THE FIX --- */}
+      {/* Only show the HUD when the game is "PLAYING" */}
+      {gameState === "PLAYING" && (
+        <>
+          {/* --- NEW BACK BUTTON --- */}
+          <button onClick={onGameEnd} className="game-back-btn">⬅ Back</button>
+          
+          <div className="spaceship-hud">
+            <h2>Words Hit: {wordsHit}</h2>
+            <div className="feedback-banner" style={{ minHeight: '50px', background: 'transparent', color: 'white' }}>{feedback}</div>
+            
+            <button className="mic-btn" onClick={handleMicClick} disabled={isRecording || gameState !== 'PLAYING'}>
+              {isRecording ? "🎙️..." : "🎙️ Speak"}
+            </button>
+          </div>
+        </>
+      )}
+      {/* --- END OF FIX --- */}
+
+
+      {/* --- This is the main game area div that gets measured --- */}
+      <div className="spaceship-game-area" ref={gameAreaRef}>
+        {renderGameContent()}
       </div>
 
-      {renderGameArea()}
-
-      {/* --- CSS is all the same as before --- */}
+      {/* --- CSS - THE TYPO IS FIXED HERE --- */}
       <style>{`
+        /* --- NEW BACK BUTTON STYLE --- */
+        .game-back-btn {
+          position: absolute;
+          top: 15px;
+          left: 15px;
+          background: rgba(255, 255, 255, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.5);
+          color: white;
+          padding: 8px 15px;
+          border-radius: 10px;
+          cursor: pointer;
+          font-weight: bold;
+          font-size: 1rem;
+          z-index: 20; /* On top of HUD */
+        }
+        .game-back-btn:hover {
+          background: rgba(255, 255, 255, 0.4);
+        }
+        /* --- END NEW STYLE --- */
+
         .spaceship-hud {
           width: 100%;
           text-align: center;
@@ -425,8 +479,9 @@ function SpaceshipRevisionGame({ words, token, onGameEnd }) {
           overflow: hidden;
           background: #000;
           border-radius: 15px;
-          margin-top: 130px; /* Make space for the HUD */
-          height: calc(100vh - 130px);
+          /* --- FIX: Margin-top is 0 if HUD is hidden --- */
+          margin-top: ${gameState === 'PLAYING' ? '130px' : '0px'};
+          height: ${gameState === 'PLAYING' ? 'calc(100vh - 130px)' : '100vh'};
         }
         
         .word-obstacle-game {
@@ -576,7 +631,8 @@ function SpaceshipRevisionGame({ words, token, onGameEnd }) {
           background-image: 
             radial-gradient(2px 2px at 30px 120px, #fff, rgba(0,0,0,0)),
             radial-gradient(2px 2px at 80px 40px, #fff, rgba(0,0,0,0)),
-            radial-gradient(3px 3px at 170px 180px, #fff, rgba(0,0,a,0));
+            /* --- THIS IS THE FIX: 'a' is now '0' --- */
+            radial-gradient(3px 3px at 170px 180px, #fff, rgba(0,0,0,0));
           background-repeat: repeat;
           background-size: 300px 300px;
           animation: move-stars-near 50s linear infinite;

@@ -1051,7 +1051,7 @@ body {
       rgba(255, 95, 40, 1) 100%);
   border-radius: 50% 50% 45% 45%;
   animation: floatUp 14s linear infinite,
-             wiggle 3.8s ease-in-out infinite;
+            wiggle 3.8s ease-in-out infinite;
   z-index: 1; /* behind content */
   opacity: 0.92;
 }
@@ -1266,7 +1266,7 @@ body {
   opacity: 0.92;
 
   animation: balloonRise 14s linear infinite,
-             balloonWiggle 4s ease-in-out infinite;
+            balloonWiggle 4s ease-in-out infinite;
 }
 
 /* Highlight */
@@ -1388,7 +1388,195 @@ body {
   background: rgba(60, 60, 60, 0.6);
   transform: translateX(-50%);
 }
+/*
+=================================
+ ACHIEVEMENT SCREEN STYLES
+=================================
+*/
 
+.achievement-screen {
+  text-align: center;
+}
+
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 250px));
+  gap: 1.5rem;
+  padding: 1rem 2rem;
+  max-width: 1200px; /* <--- CHANGE THIS from 900px */
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+.achievement-card {
+  background-color: #f0f0f0; /* Darker background for cards */
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  border: 1px solid #ddd;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+}
+
+.achievement-card.locked {
+  background-color: #e9e9e9;
+  opacity: 0.6;
+}
+/*
+=================================
+ HEADER & BACK BUTTON STYLES (REVISED)
+=================================
+*/
+
+/* This targets the header on Progress, Trophies, etc. */
+.screen-container .header {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* This centers the title */
+  position: relative; /* Allows us to position the back button */
+  padding: 1rem 1.5rem;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.screen-container .header h1 {
+  margin: 0;
+  font-size: 1.5rem; /* --- ADJUSTED: Was 1.8rem --- */
+  color: #333;
+}
+
+.back-button {
+  position: absolute; /* Pulls the button out of the flow */
+  left: 1.5rem; /* Pins it to the left */
+  top: 50%;
+  transform: translateY(-50%); /* Perfectly centers it vertically */
+
+  /* --- ADJUSTED: New blue style --- */
+  background: #3498db;
+  border: none;
+  color: white;
+  
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  background: #2980b9; /* Darker blue on hover */
+}
+
+
+/*
+=================================
+ ACHIEVEMENT SCREEN STYLES (REVISED)
+=================================
+*/
+
+.achievement-screen {
+  text-align: center;
+}
+
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem 2rem;
+  max-width: 900px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+.achievement-card {
+  background-color: #f0f0f0; 
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  border: 1px solid #ddd;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+}
+
+.achievement-card.locked {
+  background-color: #e9e9e9;
+  opacity: 0.6;
+}
+
+.achievement-card.earned {
+  background-color: #fff;
+  border-color: #FFD700; 
+  box-shadow: 0 6px 15px rgba(255, 215, 0, 0.3);
+}
+
+.achievement-icon {
+  font-size: 2.5rem; /* --- ADJUSTED: Was 3rem --- */
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.achievement-name {
+  font-size: 1rem; /* --- ADJUSTED: Was 1.1rem --- */
+  font-weight: 600;
+  margin: 0.5rem 0;
+  color: #333;
+}
+
+.achievement-card.locked .achievement-name {
+  color: #777;
+}
+
+.achievement-desc {
+  font-size: 0.85rem; /* --- ADJUSTED: Was 0.9rem --- */
+  color: #666;
+  min-height: 40px; 
+}
+
+.achievement-date {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #008a00; 
+  margin-top: 1rem;
+}
+.achievement-card.earned {
+  background-color: #fff;
+  border-color: #FFD700; /* Gold border for earned */
+  box-shadow: 0 6px 15px rgba(255, 215, 0, 0.3);
+}
+
+.achievement-icon {
+  font-size: 3rem;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.achievement-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0.5rem 0;
+  color: #333;
+}
+
+.achievement-card.locked .achievement-name {
+  color: #777;
+}
+
+.achievement-desc {
+  font-size: 0.9rem;
+  color: #666;
+  min-height: 40px; /* Give some consistent height */
+}
+
+.achievement-date {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #008a00; /* Green for the earned date */
+  margin-top: 1rem;
+}
 /* Smooth upward movement */
 @keyframes balloonRise {
   0% { transform: translateY(110vh); }

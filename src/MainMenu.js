@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
-function MainMenu({ user, onStartChallenge, onShowProgress, token, onLogout, onShowLeaderboard }) {
+function MainMenu({ user, onStartChallenge, onShowProgress, token, onLogout, onShowLeaderboard, onShowAchievements }) {
   const [stats, setStats] = useState({ streak: 0, xp: 0 });
 
   useEffect(() => {
@@ -37,13 +37,13 @@ function MainMenu({ user, onStartChallenge, onShowProgress, token, onLogout, onS
   return (
     <div className="mainmenu-container">
 
-      {/* Animated Balloons */}
+      {/* Your Animated Balloons (ALL KEPT) */}
       <div className="balloon balloon1"><div className="balloon-string"></div></div>
       <div className="balloon balloon2"><div className="balloon-string"></div></div>
       <div className="balloon balloon3"><div className="balloon-string"></div></div>
 
 
-      {/* Stats Card */}
+      {/* Your Stats Card (ALL KEPT) */}
       <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -63,7 +63,7 @@ function MainMenu({ user, onStartChallenge, onShowProgress, token, onLogout, onS
         </div>
       </motion.div>
 
-      {/* Greeting */}
+      {/* Your Greeting (ALL KEPT) */}
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -76,7 +76,7 @@ function MainMenu({ user, onStartChallenge, onShowProgress, token, onLogout, onS
         <p className="menu-subtitle">What would you like to do today?</p>
       </motion.div>
 
-      {/* Buttons */}
+      {/* Your Buttons */}
       <div className="menu-buttons">
         <motion.button
           className="menu-btn play-btn"
@@ -104,6 +104,17 @@ function MainMenu({ user, onStartChallenge, onShowProgress, token, onLogout, onS
         >
           📊 My Progress
         </motion.button>
+
+        {/* --- THIS IS THE FIXED LINE --- */}
+        <motion.button
+          className="menu-btn trophies-btn" 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onShowAchievements}
+        >
+          🏆 My Trophies
+        </motion.button>
+        {/* --- END OF FIX --- */}
       </div>
 
       <button className="logout-btn" onClick={onLogout}>

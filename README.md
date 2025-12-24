@@ -1,70 +1,81 @@
-# Getting Started with Create React App
+#  Vocalis
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Vocalis is a React-based web application focused on language learning and speech practice through interactive, game-based experiences. The application uses real-time speech recognition and gamification techniques to help users improve pronunciation and consistency.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+##  Features
 
-### `npm start`
+###  Speech Recognition
+- Integrated with the **Deepgram API** for transcribing user speech.
+- Allows users to practice pronunciation by speaking words aloud.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+###  Interactive Gameplay
+- Structured **level-based system** with themed levels.
+- Each level contains:
+  - Level name
+  - Description
+  - Theme color
+  - List of words
+- **Picture Round** mode where users identify images (e.g., CAT, DOG, CAR) by speaking, without text prompts.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+###  Personalized Practice
+- Tracks words not yet mastered by the user.
+- Automatically generates a **Personalized Practice Deck** for targeted improvement.
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+##  Gamification & Progress Tracking
 
-### `npm run build`
+###  Achievements
+Users can unlock achievements such as:
+- **First Steps** – Master the first word
+- **Word Wizard** – Master 10 words
+- **Heating Up** – Maintain a 3-day learning streak
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+###  Streak System
+- Calculates daily practice streaks.
+- Encourages consistent usage.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+###  Leaderboard
+- Global leaderboard for **Time Attack** mode.
+- Displays top 10 scores and maximum combo streaks.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+---
 
-### `npm run eject`
+##  Tech Stack
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Frontend
+- React
+- Bootstrapped with **Create React App**
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Backend
+- Node.js
+- Express.js
+- RESTful APIs for authentication, progress tracking, and leaderboard management
+- Acts as a secure proxy for Deepgram API calls
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Database
+- MongoDB
+- Stores user data, progress, achievements, levels, and leaderboard scores
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Authentication & Security
+- JWT (JSON Web Tokens) for authentication
+- Passwords hashed using **bcryptjs**
 
-## Learn More
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+---
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+##  Installation & Setup
 
-### Code Splitting
+### Prerequisites
+- Node.js (v16 or later recommended)
+- MongoDB (local or cloud instance)
+- Deepgram API key
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### Installation
 
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```bash
+git clone https://github.com/your-username/vocalis.git
+cd vocalis
+npm install

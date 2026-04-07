@@ -1,79 +1,73 @@
-#  Vocalis
+#  Vocalis — Voice-Based Speech Therapy Platform
 
-Vocalis is a React-based web application focused on language learning and speech practice through interactive, game-based experiences. The application uses real-time speech recognition and gamification techniques to help users improve pronunciation and consistency.
+Vocalis is a full-stack web application designed to help users improve pronunciation and speech fluency through real-time voice interaction and gamified learning.
+Unlike traditional language apps, Vocalis focuses on **active speaking practice** using speech recognition and adaptive difficulty.
+
+---
+##  Problem Statement
+
+Many learners struggle with pronunciation but lack:
+- Real-time feedback
+- Consistent speaking practice
+- Engaging learning systems
+
+Vocalis solves this by combining **speech recognition + gamification + adaptive learning**.
 
 ---
 
-##  Features
+##  Key Features
 
-###  Speech Recognition
-- Integrated with the **Deepgram API** for transcribing user speech.
-- Allows users to practice pronunciation by speaking words aloud.
+###  Real-Time Speech Analysis
+- Integrated with Deepgram API for live speech recognition
+- Users speak words and receive immediate feedback
 
-###  Interactive Gameplay
-- Structured **level-based system** with themed levels.
-- Each level contains:
-  - Level name
-  - Description
-  - Theme color
-  - List of words
-- **Picture Round** mode where users identify images (e.g., CAT, DOG, CAR) by speaking, without text prompts.
+###  Gamified Learning System
+- Level-based progression (Alphabets → Words → Sentences)
+- Achievements, streaks, and leaderboard system
 
 ###  Personalized Practice
-- Tracks words not yet mastered by the user.
-- Automatically generates a **Personalized Practice Deck** for targeted improvement.
+- Tracks weak words automatically
+- Generates custom practice decks
+
+###  Progress Tracking
+- Daily streak system
+- Leaderboards (Time Attack mode)
+- Achievement unlocking system
 
 ---
 
-##  Gamification & Progress Tracking
+##  System Architecture
 
-###  Achievements
-Users can unlock achievements such as:
-- **First Steps** – Master the first word
-- **Word Wizard** – Master 10 words
-- **Heating Up** – Maintain a 3-day learning streak
-
-###  Streak System
-- Calculates daily practice streaks.
-- Encourages consistent usage.
-
-###  Leaderboard
-- Global leaderboard for **Time Attack** mode.
-- Displays top 10 scores and maximum combo streaks.
+Frontend (React)  
+⬇  
+Backend (Node.js + Express)  
+⬇  
+MongoDB (User data, progress, leaderboard)  
+⬇  
+Deepgram API (Speech processing)
 
 ---
 
 ##  Tech Stack
 
-### Frontend
+**Frontend**
 - React
-- Bootstrapped with **Create React App**
 
-### Backend
-- Node.js
-- Express.js
-- RESTful APIs for authentication, progress tracking, and leaderboard management
-- Acts as a secure proxy for Deepgram API calls
+**Backend**
+- Node.js, Express.js
 
-### Database
+**Database**
 - MongoDB
-- Stores user data, progress, achievements, levels, and leaderboard scores
 
-### Authentication & Security
-- JWT (JSON Web Tokens) for authentication
-- Passwords hashed using **bcryptjs**
+**Authentication**
+- JWT, bcrypt
 
+**API**
+- Deepgram (speech recognition)
 
 ---
 
-##  Installation & Setup
-
-### Prerequisites
-- Node.js (v16 or later recommended)
-- MongoDB (local or cloud instance)
-- Deepgram API key
-
-### Installation
+##  Installation
 
 ```bash
 git clone https://github.com/your-username/vocalis.git

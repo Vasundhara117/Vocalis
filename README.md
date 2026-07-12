@@ -30,11 +30,13 @@ The platform combines speech analysis, personalized practice, progress tracking,
 -  Real-time speech recognition using the Deepgram Speech-to-Text API
 -  Instant pronunciation feedback
 -  Gamified learning modules
-  - Alphabets
-  - Words
-  - Sentences
+  - Animals
+  - School
+  - Family
   - Picture Round
-  - Spaceship Revision
+  - Time Attack Mode
+  - Personalized Practice
+  - Spaceship Revision Game
 -  Personalized progress tracking
 -  User leaderboard
 -  Secure user authentication using JWT
@@ -187,7 +189,7 @@ PORT=5000
 ### Start Backend
 
 ```bash
-npm run dev
+npm start
 ```
 
 ### Start Frontend
@@ -203,20 +205,6 @@ Open your browser at
 ```
 http://localhost:3000
 ```
-
----
-
-#  API Routes
-
-| Method | Endpoint | Description |
-|----------|-------------------------|------------------------------------|
-| POST | `/api/auth/register` | Register a new user |
-| POST | `/api/auth/login` | User login |
-| POST | `/api/check-speech` | Analyze speech input |
-| GET | `/api/progress` | Fetch user progress |
-| POST | `/api/progress` | Update learning progress |
-| GET | `/api/leaderboard` | Retrieve leaderboard |
-| GET | `/api/profile` | Fetch user profile |
 
 ---
 
@@ -287,11 +275,6 @@ Leaderboard & User Dashboard
 
 ---
 
-#  License
-
-This project is licensed under the MIT License.
-
----
 
 #  Author
 

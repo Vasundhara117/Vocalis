@@ -249,39 +249,35 @@ Leaderboard & User Dashboard
 
 ---
 
-# 📸 Screenshots
-
-### Home Page
-
-> Add screenshot here
-
----
+#  Screenshots
 
 ### Login
-
-> Add screenshot here
-
----
+![Login](login.png)
 
 ### Dashboard
+![Dashboard](dashboard.png)
 
-> Add screenshot here
+### Practice Categories
+![Categories](categories.png)
+
+### Levels
+![Levels](levels.png)
+
+### Speech Challenge
+![Speech](game.png)
+
+### Progress Tracking
+![Progress](pprogress.png)
+
+### Achievements
+![Achievements](trohies.png)
+
+### Space Revision Game
+![Spaceship](space.png)
 
 ---
 
-### Practice Session
-
-> Add screenshot here
-
----
-
-### Leaderboard
-
-> Add screenshot here
-
----
-
-# 🔮 Future Enhancements
+#  Future Enhancements
 
 - Enhanced speech analytics
 - Additional language support
@@ -291,7 +287,7 @@ Leaderboard & User Dashboard
 
 ---
 
-# 📄 License
+#  License
 
 This project is licensed under the MIT License.
 
